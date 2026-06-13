@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bridge Friends — Live Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://sheets.googleapis.com" />
+  <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-main">
+      <h1>Bridge Friends <span class="dash">—</span> Live Dashboard</h1>
+      <div class="header-status">
+        <span id="refresh-indicator" class="refresh-indicator" title="This page refreshes itself automatically">
+          <span class="dot"></span> auto-refreshing
+        </span>
+        <span id="last-updated" class="last-updated">Loading…</span>
+        <span id="spinner" class="spinner" hidden></span>
+      </div>
+    </div>
+    <div id="error-banner" class="error-banner" hidden></div>
+  </header>
+
+  <main>
+    <!-- LATEST HAND -->
+    <section class="panel latest-hand" aria-labelledby="latest-hand-title">
+      <h2 id="latest-hand-title">Latest hand</h2>
+      <div id="latest-hand" class="latest-hand-body">
+        <p class="muted">Waiting for data…</p>
+      </div>
+    </section>
+
+    <!-- LEADERBOARD CARDS -->
+    <section class="panel" aria-labelledby="players-title">
+      <div class="section-head">
+        <h2 id="players-title">Standings</h2>
+        <span class="muted small" id="session-label"></span>
+      </div>
+      <div id="player-cards" class="player-cards">
+        <p class="muted">Waiting for data…</p>
+      </div>
+
+      <!-- SORTABLE TABLE -->
+      <div class="table-wrap">
+        <table id="standings-table" class="standings">
+          <thead>
+            <tr>
+              <th data-sort="rank" class="sortable num">#</th>
+              <th data-sort="player" class="sortable">Player</th>
+              <th data-sort="grand" class="sortable num active" aria-sort="descending">Grand total</th>
+              <th data-sort="y2026" class="sortable num">2026 total</th>
+              <th data-sort="session" class="sortable num">This session</th>
+              <th data-sort="efficiency" class="sortable num">Efficiency</th>
+            </tr>
+          </thead>
+          <tbody id="standings-body"></tbody>
+        </table>
+        <p class="muted small">Tip: click a column header to sort. Efficiency = total score ÷ total HCP dealt.</p>
+      </div>
+    </section>
+
+    <!-- ALL-TIME RACE -->
+    <section class="panel" aria-labelledby="race-title">
+      <h2 id="race-title">Cumulative score race <span class="muted small">(all-time)</span></h2>
+      <div class="chart-box">
+        <canvas id="chart-alltime" aria-label="All-time cumulative score line chart" role="img"></canvas>
+      </div>
+    </section>
+
+    <!-- 2026 RACE -->
+    <section class="panel" aria-labelledby="race2026-title">
+      <h2 id="race2026-title">2026 race</h2>
+      <div id="mini-2026" class="mini-leaderboard"></div>
+      <div class="chart-box">
+        <canvas id="chart-2026" aria-label="2026 cumulative score line chart" role="img"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="btn btn-primary" id="add-hand-link" href="#" target="_blank" rel="noopener">+ Add a hand</a>
+    <button class="btn" id="refresh-now">↻ Refresh now</button>
+    <p class="muted small footer-note">
+      Reads live from Google Sheets · scores only · made by Bridge Friends
+    </p>
+  </footer>
+
+  <!-- App logic (ES module). config.js is imported by app.js. -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>

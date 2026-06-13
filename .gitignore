@@ -1,0 +1,14 @@
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
+
+# Local scratch
+/tmp/
+*.log
+
+# Note: config.js is intentionally committed — it holds the (low-sensitivity,
+# Sheets-only) API key needed for the static site to read public scores.
