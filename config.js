@@ -30,8 +30,8 @@ export const CONFIG = {
   // The Google Sheet that is fed by the Google Form (4 submissions per hand).
   SHEET_ID: "1QdWqUcw3ykjQVaY7kCdEtVthWS5ACqNi3TuXTMRpm5w",
 
-  // <-- PASTE YOUR API KEY HERE (keep the quotes):
-  API_KEY: "PASTE_YOUR_API_KEY_HERE",
+  // <-- YOUR API KEY (restrict it to the Google Sheets API in Google Cloud):
+  API_KEY: "AIzaSyDg1fLon3J9D7eStEx4Bz0nCQvENN-QCR8",
 
   // The raw form-data tab and the columns to read. Do NOT point this at a
   // pivot/dashboard tab — those can be restructured. A:L is the raw form data.
