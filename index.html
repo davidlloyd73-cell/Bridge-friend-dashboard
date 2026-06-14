@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bridge Friends — Live Dashboard</title>
-  <link rel="stylesheet" href="styles.css?v=20260614b" />
+  <link rel="stylesheet" href="styles.css?v=20260614c" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -54,6 +54,31 @@
           <tbody id="session-hands-body"></tbody>
         </table>
         <p class="muted small">Newest hand first. Contract marks: * Doubled, ** Redoubled. Points = the declaring side's per-player score for that hand.</p>
+      </div>
+    </section>
+
+    <!-- 2026 STANDINGS -->
+    <section class="panel" aria-labelledby="players-2026-title">
+      <div class="section-head">
+        <h2 id="players-2026-title">2026 Standings</h2>
+        <span class="muted small" id="session-2026-label"></span>
+      </div>
+      <div id="player-cards-2026" class="player-cards"></div>
+
+      <div class="table-wrap">
+        <table id="standings-2026-table" class="standings">
+          <thead>
+            <tr>
+              <th data-sort="rank" class="sortable num">#</th>
+              <th data-sort="player" class="sortable">Player</th>
+              <th data-sort="y2026" class="sortable num active" aria-sort="descending">2026 total</th>
+              <th data-sort="session" class="sortable num">This session</th>
+              <th data-sort="efficiency" class="sortable num">Efficiency</th>
+            </tr>
+          </thead>
+          <tbody id="standings-2026-body"></tbody>
+        </table>
+        <p class="muted small">2026 sessions only. Click a column header to sort. Efficiency = 2026 score ÷ 2026 HCP dealt.</p>
       </div>
     </section>
 
@@ -115,6 +140,6 @@
   <!-- App logic (ES module). config.js is imported by app.js. -->
   <!-- The ?v= query is bumped on each code change so browsers fetch the new
        file instead of a stale cached copy. (Data is always fetched fresh.) -->
-  <script type="module" src="app.js?v=20260614b"></script>
+  <script type="module" src="app.js?v=20260614c"></script>
 </body>
 </html>

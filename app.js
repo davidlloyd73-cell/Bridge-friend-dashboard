@@ -45,6 +45,7 @@ let chart2026 = null;
 
 // ---- Sort state for the standings table ----
 let sortState = { key: "grand", dir: "desc" };
+let sort2026State = { key: "y2026", dir: "desc" };
 
 // =============================================================================
 // Utilities
@@ -168,20 +169,21 @@ function buildModel(rows) {
     };
   });
 
-  // ---- Per-player totals ----
-  const grand = {}, y2026 = {}, hcpTotal = {};
-  PLAYERS.forEach((p) => { grand[p] = 0; y2026[p] = 0; hcpTotal[p] = 0; });
+  // ---- Per-player totals (all-time + 2026) ----
+  const grand = {}, y2026 = {}, hcpTotal = {}, hcp2026 = {};
+  PLAYERS.forEach((p) => { grand[p] = 0; y2026[p] = 0; hcpTotal[p] = 0; hcp2026[p] = 0; });
 
   records.forEach((rec) => {
     if (!(rec.player in grand)) return; // skip "Unknown" from leaderboard maths
     grand[rec.player] += rec.score;
     hcpTotal[rec.player] += rec.hcp;
-    if (rec.year === 2026) y2026[rec.player] += rec.score;
+    if (rec.year === 2026) { y2026[rec.player] += rec.score; hcp2026[rec.player] += rec.hcp; }
   });
 
-  const efficiency = {};
+  const efficiency = {}, efficiency2026 = {};
   PLAYERS.forEach((p) => {
     efficiency[p] = hcpTotal[p] > 0 ? Math.round(grand[p] / hcpTotal[p]) : 0;
+    efficiency2026[p] = hcp2026[p] > 0 ? Math.round(y2026[p] / hcp2026[p]) : 0;
   });
 
   // ---- Sessions: group by Date value, ordered ascending by real date ----
@@ -219,6 +221,7 @@ function buildModel(rows) {
   const allTime = cumulative(sessions);
   const sessions2026 = sessions.filter((s) => s.year === 2026);
   const race2026 = cumulative(sessions2026);
+  const latest2026Session = sessions2026.length ? sessions2026[sessions2026.length - 1] : null;
 
   // ---- Latest hand (newest timestamp) ----
   let latestRec = null;
@@ -263,8 +266,8 @@ function buildModel(rows) {
   }
 
   return {
-    records, grand, y2026, hcpTotal, efficiency,
-    sessions, allTime, race2026,
+    records, grand, y2026, hcpTotal, hcp2026, efficiency, efficiency2026,
+    sessions, allTime, race2026, latest2026Session,
     latestHand, latestSession, latestSessionHands,
     rowCount: records.length,
     newestTsMs: latestRec ? latestRec.tsMs : 0,
@@ -498,6 +501,72 @@ function renderTable(m) {
   });
 }
 
+function render2026Cards(m) {
+  const el = $("#player-cards-2026");
+  const leader = [...PLAYERS].sort((a, b) => m.y2026[b] - m.y2026[a])[0];
+  const sessTotals = m.latest2026Session ? m.latest2026Session.perPlayer : null;
+
+  el.innerHTML = PLAYERS.map((p) => {
+    const isLeader = p === leader && m.y2026[p] > 0;
+    const sess = sessTotals ? sessTotals[p] : 0;
+    return `
+      <div class="pcard ${isLeader ? "leader" : ""}" style="--pc:${COLORS[p]}">
+        ${isLeader ? '<span class="medal" title="2026 leader">🏆</span>' : ""}
+        <div class="name"><span class="swatch"></span>${escapeHtml(p)}</div>
+        <div class="big">${fmtNum(m.y2026[p])}</div>
+        <div class="sub"><span>This session: <b>${fmtNum(sess)}</b></span><span>Eff: <b>${m.efficiency2026[p]}</b></span></div>
+      </div>`;
+  }).join("");
+
+  $("#session-2026-label").textContent = m.latest2026Session
+    ? `Latest 2026 session: ${m.latest2026Session.label}`
+    : "No 2026 sessions yet";
+}
+
+function render2026Table(m) {
+  const body = $("#standings-2026-body");
+  const sessTotals = m.latest2026Session ? m.latest2026Session.perPlayer : null;
+
+  let rows = PLAYERS.map((p) => ({
+    player: p,
+    y2026: m.y2026[p],
+    session: sessTotals ? sessTotals[p] : 0,
+    efficiency: m.efficiency2026[p],
+  }));
+
+  // Rank is always by 2026 total (independent of current sort).
+  const by2026 = [...rows].sort((a, b) => b.y2026 - a.y2026);
+  const rankOf = new Map(by2026.map((r, i) => [r.player, i + 1]));
+
+  const dir = sort2026State.dir === "asc" ? 1 : -1;
+  rows.sort((a, b) => {
+    if (sort2026State.key === "player") return a.player.localeCompare(b.player) * dir;
+    if (sort2026State.key === "rank") return (rankOf.get(a.player) - rankOf.get(b.player)) * dir;
+    return (a[sort2026State.key] - b[sort2026State.key]) * dir;
+  });
+
+  body.innerHTML = rows.map((r) => `
+    <tr>
+      <td class="num">${rankOf.get(r.player)}</td>
+      <td class="player-cell"><span class="swatch" style="background:${COLORS[r.player]}"></span>${escapeHtml(r.player)}</td>
+      <td class="num">${fmtNum(r.y2026)}</td>
+      <td class="num">${fmtNum(r.session)}</td>
+      <td class="num">${r.efficiency}</td>
+    </tr>`).join("");
+
+  // Update header sort indicators.
+  document.querySelectorAll("#standings-2026-table th.sortable").forEach((th) => {
+    const key = th.dataset.sort;
+    if (key === sort2026State.key) {
+      th.classList.add("active");
+      th.setAttribute("aria-sort", sort2026State.dir === "asc" ? "ascending" : "descending");
+    } else {
+      th.classList.remove("active");
+      th.removeAttribute("aria-sort");
+    }
+  });
+}
+
 function renderMini2026(m) {
   const el = $("#mini-2026");
   const ranked = [...PLAYERS].sort((a, b) => m.y2026[b] - m.y2026[a]);
@@ -570,6 +639,8 @@ function renderCharts(m) {
 function renderAll(m) {
   renderLatestHand(m);
   renderThisSession(m);
+  render2026Cards(m);
+  render2026Table(m);
   renderPlayerCards(m);
   renderTable(m);
   renderMini2026(m);
@@ -685,6 +756,20 @@ function init() {
         sortState.dir = (key === "player" || key === "rank") ? "asc" : "desc";
       }
       if (lastGoodModel) renderTable(lastGoodModel);
+    });
+  });
+
+  // Sortable headers for the 2026 standings table.
+  document.querySelectorAll("#standings-2026-table th.sortable").forEach((th) => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.sort;
+      if (sort2026State.key === key) {
+        sort2026State.dir = sort2026State.dir === "asc" ? "desc" : "asc";
+      } else {
+        sort2026State.key = key;
+        sort2026State.dir = (key === "player" || key === "rank") ? "asc" : "desc";
+      }
+      if (lastGoodModel) render2026Table(lastGoodModel);
     });
   });
 
