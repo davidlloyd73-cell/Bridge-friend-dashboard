@@ -239,10 +239,33 @@ function buildModel(rows) {
   const latestSessionKey = latestRec ? (latestRec.rawDate || "(no date)") : null;
   const latestSession = sessionMap.get(latestSessionKey) || null;
 
+  // Hand-by-hand breakdown for the latest session: group that session's rows by
+  // hand number, summarise each, and order by hand number (then timestamp).
+  let latestSessionHands = [];
+  if (latestRec) {
+    const sessRows = records.filter((r) => (r.rawDate || "(no date)") === latestSessionKey);
+    const byHand = new Map();
+    sessRows.forEach((r) => {
+      if (!byHand.has(r.hand)) byHand.set(r.hand, []);
+      byHand.get(r.hand).push(r);
+    });
+    latestSessionHands = [...byHand.values()]
+      .map((rows) => {
+        const s = summariseHand(rows, rows[0]);
+        s.firstTsMs = Math.min(...rows.map((x) => x.tsMs || Infinity));
+        return s;
+      })
+      .sort((a, b) => {
+        const an = parseInt(a.handNo, 10), bn = parseInt(b.handNo, 10);
+        if (Number.isFinite(an) && Number.isFinite(bn) && an !== bn) return an - bn;
+        return a.firstTsMs - b.firstTsMs;
+      });
+  }
+
   return {
     records, grand, y2026, hcpTotal, efficiency,
     sessions, allTime, race2026,
-    latestHand, latestSession,
+    latestHand, latestSession, latestSessionHands,
     rowCount: records.length,
     newestTsMs: latestRec ? latestRec.tsMs : 0,
     fetchedAt: new Date(),
@@ -272,8 +295,13 @@ function summariseHand(handRows, fallbackRec) {
   if (partners.length === 1) partner = partners[0];
   // If ambiguous (0 or >1 candidates) we leave partner null and show declarer only.
 
-  const declScore = sumScore(declaringRows);
-  const defScore = sumScore(defendingRows);
+  // Every player on a side logs the SAME per-player score, so show a single
+  // representative value (not the sum of both partners). Prefer the declarer's
+  // own row for the declaring side; fall back to any side member.
+  const declScore = (declarerRow && declarerRow.wonAuction)
+    ? declarerRow.score
+    : (declaringRows[0] ? declaringRows[0].score : 0);
+  const defScore = defendingRows[0] ? defendingRows[0].score : 0;
 
   const level = declarerRow ? declarerRow.level : 0;
   const suit = declarerRow ? declarerRow.suit : "";
@@ -294,8 +322,6 @@ function summariseHand(handRows, fallbackRec) {
   };
 }
 
-function sumScore(rows) { return rows.reduce((a, r) => a + r.score, 0); }
-
 // =============================================================================
 // Rendering
 // =============================================================================
@@ -313,25 +339,36 @@ function suitDisplay(suit) {
   return { sym, red };
 }
 
+/** Doubling mark: "*" for Doubled, "**" for Redoubled, "" otherwise. */
+function doubleMark(doubled) {
+  const d = String(doubled || "").toLowerCase();
+  if (d.startsWith("redouble")) return "**";
+  if (d.startsWith("double")) return "*";
+  return "";
+}
+
+/** Full contract as HTML (e.g. 3NT*, 4♥). Returns "—" when there's no contract. */
+function contractHtml(h) {
+  if (!h.hasContract) return "—";
+  const { sym, red } = suitDisplay(h.suit);
+  return `${h.level}<span class="${red ? "lh-suit-red" : ""}">${sym}</span>${doubleMark(h.doubled)}`;
+}
+
+/** Made/needed result as HTML, or "" when there's no contract. */
+function resultHtmlFor(h) {
+  if (!h.hasContract || h.resultDiff === null) return "";
+  return h.resultDiff >= 0
+    ? `<span class="lh-result-made">Made${h.resultDiff > 0 ? " +" + h.resultDiff : ""}</span>`
+    : `<span class="lh-result-down">Down ${Math.abs(h.resultDiff)}</span>`;
+}
+
 function renderLatestHand(m) {
   const el = $("#latest-hand");
   const h = m.latestHand;
   if (!h) { el.innerHTML = '<p class="muted">No hands recorded yet.</p>'; return; }
 
-  let contractHtml = "—";
-  let resultHtml = "";
-  if (h.hasContract) {
-    const { sym, red } = suitDisplay(h.suit);
-    const dbl = h.doubled ? ` ${escapeHtml(h.doubled)}` : "";
-    contractHtml = `<span class="lh-contract">${h.level}<span class="${red ? "lh-suit-red" : ""}">${sym}</span>${escapeHtml(dbl)}</span>`;
-    if (h.resultDiff !== null) {
-      if (h.resultDiff >= 0) {
-        resultHtml = `<span class="lh-result-made">Made${h.resultDiff > 0 ? " +" + h.resultDiff : ""}</span>`;
-      } else {
-        resultHtml = `<span class="lh-result-down">Down ${Math.abs(h.resultDiff)}</span>`;
-      }
-    }
-  }
+  const contract = h.hasContract ? `<span class="lh-contract">${contractHtml(h)}</span>` : "—";
+  const resultHtml = resultHtmlFor(h);
 
   const declColor = COLORS[h.declarer] || COLORS.Unknown;
   const sideLabel = h.partner
@@ -341,7 +378,7 @@ function renderLatestHand(m) {
   el.innerHTML = `
     <div class="lh-top">
       <span class="lh-hand-no">Hand #${escapeHtml(h.handNo)}</span>
-      ${contractHtml}
+      ${contract}
       ${resultHtml}
       <span class="muted">${escapeHtml(h.dateLabel)}</span>
     </div>
@@ -351,6 +388,46 @@ function renderLatestHand(m) {
       <div class="lh-cell"><div class="k">Declaring side points</div><div class="v">${fmtNum(h.declScore)}</div></div>
       <div class="lh-cell"><div class="k">Defending side points</div><div class="v">${fmtNum(h.defScore)}</div></div>
     </div>`;
+}
+
+function renderThisSession(m) {
+  const meta = $("#this-session-meta");
+  const totalsEl = $("#session-totals");
+  const body = $("#session-hands-body");
+  if (!m.latestSession) {
+    meta.textContent = "";
+    totalsEl.innerHTML = "";
+    body.innerHTML = `<tr><td colspan="5" class="muted">No session data yet.</td></tr>`;
+    return;
+  }
+
+  const hands = m.latestSessionHands || [];
+  meta.textContent = `${m.latestSession.label} · ${hands.length} hand${hands.length === 1 ? "" : "s"} played`;
+
+  // Per-player session totals as colour pills.
+  totalsEl.innerHTML = PLAYERS.map((p) => `
+    <span class="mini-pill">
+      <span class="swatch" style="background:${COLORS[p]}"></span>
+      ${escapeHtml(p)} <b>${fmtNum(m.latestSession.perPlayer[p])}</b>
+    </span>`).join("");
+
+  // Hand-by-hand rows (newest hand first).
+  body.innerHTML = [...hands].reverse().map((h) => {
+    const declColor = COLORS[h.declarer] || COLORS.Unknown;
+    const side = h.partner
+      ? `<span style="color:${declColor};font-weight:600">${escapeHtml(h.declarer)}</span> &amp; ${escapeHtml(h.partner)}`
+      : `<span style="color:${declColor};font-weight:600">${escapeHtml(h.declarer)}</span>`;
+    const tricks = h.hasContract ? `<span class="muted small">(${h.tricksMade}/${h.tricksNeeded})</span>` : "";
+    const result = resultHtmlFor(h) || "—";
+    return `
+      <tr>
+        <td class="num">${escapeHtml(h.handNo)}</td>
+        <td>${side}</td>
+        <td>${contractHtml(h)}</td>
+        <td>${result} ${tricks}</td>
+        <td class="num">${fmtNum(h.declScore)}</td>
+      </tr>`;
+  }).join("");
 }
 
 function renderPlayerCards(m) {
@@ -492,6 +569,7 @@ function renderCharts(m) {
 
 function renderAll(m) {
   renderLatestHand(m);
+  renderThisSession(m);
   renderPlayerCards(m);
   renderTable(m);
   renderMini2026(m);

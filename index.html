@@ -33,6 +33,30 @@
       </div>
     </section>
 
+    <!-- THIS SESSION -->
+    <section class="panel" aria-labelledby="this-session-title">
+      <div class="section-head">
+        <h2 id="this-session-title">This session</h2>
+        <span class="muted small" id="this-session-meta"></span>
+      </div>
+      <div id="session-totals" class="mini-leaderboard"></div>
+      <div class="table-wrap">
+        <table class="standings" id="session-hands-table">
+          <thead>
+            <tr>
+              <th class="num">Hand</th>
+              <th>Declarer &amp; partner</th>
+              <th>Contract</th>
+              <th>Result</th>
+              <th class="num">Points</th>
+            </tr>
+          </thead>
+          <tbody id="session-hands-body"></tbody>
+        </table>
+        <p class="muted small">Newest hand first. Contract marks: * Doubled, ** Redoubled. Points = the declaring side's per-player score for that hand.</p>
+      </div>
+    </section>
+
     <!-- LEADERBOARD CARDS -->
     <section class="panel" aria-labelledby="players-title">
       <div class="section-head">
