@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bridge Friends — Live Dashboard</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20260614b" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -113,6 +113,8 @@
   </footer>
 
   <!-- App logic (ES module). config.js is imported by app.js. -->
-  <script type="module" src="app.js"></script>
+  <!-- The ?v= query is bumped on each code change so browsers fetch the new
+       file instead of a stale cached copy. (Data is always fetched fresh.) -->
+  <script type="module" src="app.js?v=20260614b"></script>
 </body>
 </html>
