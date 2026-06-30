@@ -77,6 +77,18 @@ main {
   flex-wrap: wrap;
 }
 .last-updated { color: var(--ink-soft); font-size: .85rem; }
+.race-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--c-david);
+  background: #eef2ff;
+  padding: 5px 10px;
+  border-radius: 999px;
+  text-decoration: none;
+}
+.race-link:hover { background: #e1e9ff; }
 .refresh-indicator {
   display: inline-flex;
   align-items: center;

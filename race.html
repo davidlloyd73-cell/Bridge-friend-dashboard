@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Race to 50,000 — Bridge Friends</title>
+  <link rel="stylesheet" href="race.css?v=20260630a" />
+  <link rel="preconnect" href="https://sheets.googleapis.com" />
+</head>
+<body>
+  <header class="race-header">
+    <div class="race-header-main">
+      <h1>🏁 Race to 50,000</h1>
+      <div class="header-status">
+        <span id="refresh-indicator" class="refresh-indicator" title="This page refreshes itself automatically">
+          <span class="dot"></span> live
+        </span>
+        <span id="last-updated" class="last-updated">Loading…</span>
+        <span id="spinner" class="spinner" hidden></span>
+      </div>
+    </div>
+    <p id="race-meta" class="race-meta"></p>
+    <div id="error-banner" class="error-banner" hidden></div>
+    <a class="back-link" href="index.html">← Back to the main dashboard</a>
+  </header>
+
+  <main>
+    <div id="photo-finish" class="photo-finish" hidden></div>
+
+    <section class="panel track-panel" aria-labelledby="track-title">
+      <h2 id="track-title" class="sr-only">The track</h2>
+      <div id="track" class="track">
+        <p class="muted">Waiting for data…</p>
+      </div>
+    </section>
+
+    <section class="panel glory-panel" aria-labelledby="glory-title">
+      <h2 id="glory-title">Points to glory</h2>
+      <div id="points-to-glory" class="glory-strip"></div>
+    </section>
+  </main>
+
+  <footer class="race-footer">
+    <button class="btn" id="refresh-now">↻ Refresh now</button>
+    <a class="btn" href="index.html">View full dashboard</a>
+    <p class="muted small footer-note">
+      2026 round only · target 50,000 · reads live from the same Google Sheet as the main dashboard
+    </p>
+  </footer>
+
+  <!-- race.js imports data.js, which imports config.js — same data source as the
+       main dashboard. The ?v= query is bumped on each code change. -->
+  <script type="module" src="race.js?v=20260630a"></script>
+</body>
+</html>
