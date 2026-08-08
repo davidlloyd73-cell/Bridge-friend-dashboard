@@ -1,0 +1,73 @@
+/* =============================================================================
+   tokens.css — the single source of design tokens for BOTH pages.
+   Imported by styles.css (dashboard) and race.css (race page); neither file
+   declares its own :root any more. Change a colour or a font here and both
+   pages follow.
+
+   House style: deep navy ground, teal and gold accents, warm off-white text.
+
+   CONTRAST: every text token below clears WCAG AA against all three navy
+   grounds — 4.5:1 for body text, 3:1 for large text. Four tokens were
+   lightened from the brief's starting values to get there; each is marked
+   "AA-tuned" with its original. The check lives in the PR description.
+   ============================================================================= */
+
+:root {
+  /* ---- Grounds ---------------------------------------------------------- */
+  --navy-900: #0E2338;   /* page ground */
+  --navy-800: #14304A;   /* panels */
+  --navy-700: #1D3F60;   /* raised surfaces / hover */
+
+  /* ---- Accents ---------------------------------------------------------- */
+  --teal:     #31BAB0;   /* AA-tuned from #2AA198 (was 4.29:1 on --navy-800) */
+  --teal-dim: #1E7F84;   /* marks, borders and gradients only — never text */
+  --gold:     #D4A24C;
+  --gold-dim: #A87C2E;   /* marks, borders and gradients only — never text */
+
+  /* ---- Text ------------------------------------------------------------- */
+  --ink:      #F2EFE9;   /* body text on navy */
+  --ink-soft: #C3CCD8;
+  --muted:    #9BA8B9;   /* AA-tuned from #8898AC (was 3.69:1 on --navy-700) */
+
+  /* ---- Lines & status --------------------------------------------------- */
+  --line:     #24405C;
+  --good:     #5BB980;   /* AA-tuned from #4FB477 (was 4.21:1 on --navy-700) */
+  --bad:      #E39191;   /* AA-tuned from #D96B6B (was 3.24:1 on --navy-700) */
+
+  /* ---- Player signature colours ----------------------------------------- */
+  /* These MUST stay identical to the COLORS map at the top of data.js — the
+     charts read the hex from there, everything else reads it from here. */
+  --c-david:    #D4A24C; /* gold   */
+  --c-vivienne: #2AA198; /* teal   */
+  --c-hamish:   #E08A4B; /* amber  */
+  --c-caroline: #A98BC7; /* violet */
+  --c-unknown:  #8898AC; /* slate  */
+
+  /* ---- Shape ------------------------------------------------------------ */
+  --radius:    14px;
+  --radius-lg: 16px;     /* the race page's slightly softer panels */
+
+  /* Retuned for a dark ground: on navy a shadow reads as depth only with more
+     opacity and a tighter blur — the old light-theme values (.06 alpha, 24px
+     blur) simply vanish. */
+  --shadow:    0 1px 2px rgba(0, 0, 0, .38), 0 6px 16px rgba(0, 0, 0, .30);
+
+  /* The groove behind a race lane: darker than the panel it sits on. */
+  --track-bg:  #0E2338;
+
+  /* ---- Type ------------------------------------------------------------- */
+  /* Each keeps a system fallback so the page is readable before (or without)
+     the webfonts. */
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body:    "Spectral", Georgia, "Times New Roman", serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Every numeral in the UI wears the mono face with aligned columns. Scoped to
+   td (and an explicit .mono opt-in) so that <th class="num"> keeps the body
+   face — "Grand total" is a label, not a numeral. */
+td.num, .mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
