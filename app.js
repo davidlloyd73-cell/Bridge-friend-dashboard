@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808d";
+import { CONFIG } from "./config.js?v=20260808e";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260808d";
+} from "./data.js?v=20260808e";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -269,6 +269,36 @@ function renderRoundTable(m) {
   });
 }
 
+/**
+ * All-time efficiency: how many points each player won per high-card point they
+ * were dealt, alongside the raw HCP those points came from. Ranked by
+ * efficiency — the whole point of the panel — so it is not sortable.
+ */
+function renderEfficiencyTable(m) {
+  const body = $("#efficiency-body");
+  if (!body) return;
+
+  const rows = PLAYERS
+    .map((p) => ({
+      player: p,
+      hands: m.handsPlayed[p],
+      hcp: m.hcpTotal[p],
+      perHand: m.hcpPerHand[p],
+      efficiency: m.efficiency[p],
+    }))
+    .sort((a, b) => b.efficiency - a.efficiency);
+
+  body.innerHTML = rows.map((r, i) => `
+    <tr>
+      <td class="num">${i + 1}</td>
+      <td class="player-cell"><span class="swatch" style="background:${COLORS[r.player]}"></span>${escapeHtml(r.player)}</td>
+      <td class="num">${fmtNum(r.hands)}</td>
+      <td class="num">${fmtNum(r.hcp)}</td>
+      <td class="num">${r.perHand.toFixed(1)}</td>
+      <td class="num">${r.efficiency}</td>
+    </tr>`).join("");
+}
+
 function renderMiniRound(m) {
   const el = $("#mini-2026");
   const ranked = [...PLAYERS].sort((a, b) => m.roundTotal[b] - m.roundTotal[a]);
@@ -352,6 +382,29 @@ function chartOptions() {
   };
 }
 
+// The round chart keeps blank slots to the RIGHT of the last session so the
+// lines have somewhere to climb into — real points only, never a forecast.
+// MIN_SLOTS keeps the axis from being two columns wide early in a round;
+// LOOKAHEAD keeps a little room ahead once the round is well under way.
+const ROUND_CHART_MIN_SLOTS = 12;
+const ROUND_CHART_LOOKAHEAD = 4;
+
+/**
+ * The round series padded with empty future slots. Padding is `null`, which
+ * Chart.js skips entirely — no point is drawn and (with spanGaps off) no line
+ * is extended into the blank space, so nothing here implies a prediction.
+ */
+function paddedRoundSeries(m) {
+  const played = m.raceRound.labels.length;
+  const slots = Math.max(ROUND_CHART_MIN_SLOTS, played + ROUND_CHART_LOOKAHEAD);
+  const blanks = Math.max(0, slots - played);
+  const series = {};
+  PLAYERS.forEach((p) => {
+    series[p] = (m.raceRound.series[p] || []).concat(new Array(blanks).fill(null));
+  });
+  return { labels: m.raceRound.labels.concat(new Array(blanks).fill("")), series };
+}
+
 /**
  * Top of the round chart's y-axis. Normally the target itself, so the height of
  * every line reads directly as "how far towards 50,000". If someone goes past
@@ -379,6 +432,14 @@ function roundChartOptions(m) {
   const o = chartOptions();
   o.scales.y.max = roundYMax(m);
   o.scales.y.ticks.stepSize = target / 5;
+
+  // The x-axis is mostly blank padding, and autoSkip spaces ticks evenly across
+  // ALL slots — which silently drops real session labels in favour of empty
+  // ones. Show every tick while the axis is short (the padding renders as
+  // nothing anyway) and only hand back to autoSkip once a round is long enough
+  // for the labels to actually crowd.
+  const slots = Math.max(ROUND_CHART_MIN_SLOTS, m.raceRound.labels.length + ROUND_CHART_LOOKAHEAD);
+  o.scales.x.ticks.autoSkip = slots > 16;
   // The gridline at the target is the finish line — gold and heavier than the
   // recessive grid, matching the dashed gold finish line on the race page, so
   // the top of the chart reads as a goal rather than a bound.
@@ -407,16 +468,17 @@ function renderCharts(m) {
     chartAllTime.data.datasets.forEach((ds) => (ds.data = m.allTime.series[ds.label]));
     chartAllTime.update();
   }
-  // Current round — axis pinned to the target.
+  // Current round — axis pinned to the target, with blank slots ahead.
+  const padded = paddedRoundSeries(m);
   if (!chartRound) {
     chartRound = new Chart($("#chart-2026"), {
       type: "line",
-      data: { labels: m.raceRound.labels, datasets: lineDatasets(m.raceRound.series) },
+      data: { labels: padded.labels, datasets: lineDatasets(padded.series) },
       options: roundChartOptions(m),
     });
   } else {
-    chartRound.data.labels = m.raceRound.labels;
-    chartRound.data.datasets.forEach((ds) => (ds.data = m.raceRound.series[ds.label]));
+    chartRound.data.labels = padded.labels;
+    chartRound.data.datasets.forEach((ds) => (ds.data = padded.series[ds.label]));
     chartRound.options.scales.y.max = roundYMax(m); // may grow past the target
     chartRound.update();
   }
@@ -453,6 +515,7 @@ function renderAll(m) {
   renderRoundTable(m);
   renderPlayerCards(m);
   renderTable(m);
+  renderEfficiencyTable(m);
   renderMiniRound(m);
   renderCharts(m);
   $("#last-updated").textContent = "Updated " + m.fetchedAt.toLocaleTimeString("en-GB");
@@ -604,4 +667,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260808d";
+export { buildModel, parseUKDate } from "./data.js?v=20260808e";
