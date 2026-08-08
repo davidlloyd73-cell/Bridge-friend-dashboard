@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js";
+import { CONFIG } from "./config.js?v=20260808a";
 
 // ---- Fixed players & their signature colours (hex must match styles.css) ----
 export const PLAYERS = CONFIG.PLAYERS; // ["David","Vivienne","Hamish","Caroline"]
@@ -76,6 +76,22 @@ export function parseUKDate(v) {
   }
   const d = new Date(yyyy, mm - 1, dd, hh, mi, ss);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+// ---- The current round (see CONFIG.ROUND in config.js) ----------------------
+// Parsed once here so the record-level and session-level filters can never
+// drift apart. parseUKDate with no time part gives 00:00 local, which is
+// exactly the "inclusive from the start of that day" semantics we want.
+export const ROUND = CONFIG.ROUND;
+export const ROUND_START = parseUKDate(CONFIG.ROUND.START);
+export const ROUND_START_MS = ROUND_START ? ROUND_START.getTime() : -Infinity;
+
+/**
+ * Is this date inside the current round? Null/unparseable dates are never in
+ * the round (the model deliberately tolerates a "(no date)" session).
+ */
+export function inRound(date) {
+  return !!date && date.getTime() >= ROUND_START_MS;
 }
 
 /** Short, friendly date label for chart axes & headings, e.g. "7 Jun 25". */
@@ -151,24 +167,25 @@ export function buildModel(rows) {
       tricksMade: num(r[COL.TRICKS_MADE]),
       doubled: String(r[COL.DOUBLED] ?? "").trim(),
       score: num(r[COL.SCORE]),
+      inRound: inRound(date),
     };
   });
 
-  // ---- Per-player totals (all-time + 2026) ----
-  const grand = {}, y2026 = {}, hcpTotal = {}, hcp2026 = {};
-  PLAYERS.forEach((p) => { grand[p] = 0; y2026[p] = 0; hcpTotal[p] = 0; hcp2026[p] = 0; });
+  // ---- Per-player totals (all-time + current round) ----
+  const grand = {}, roundTotal = {}, hcpTotal = {}, hcpRound = {};
+  PLAYERS.forEach((p) => { grand[p] = 0; roundTotal[p] = 0; hcpTotal[p] = 0; hcpRound[p] = 0; });
 
   records.forEach((rec) => {
     if (!(rec.player in grand)) return; // skip "Unknown" from leaderboard maths
     grand[rec.player] += rec.score;
     hcpTotal[rec.player] += rec.hcp;
-    if (rec.year === 2026) { y2026[rec.player] += rec.score; hcp2026[rec.player] += rec.hcp; }
+    if (rec.inRound) { roundTotal[rec.player] += rec.score; hcpRound[rec.player] += rec.hcp; }
   });
 
-  const efficiency = {}, efficiency2026 = {};
+  const efficiency = {}, efficiencyRound = {};
   PLAYERS.forEach((p) => {
     efficiency[p] = hcpTotal[p] > 0 ? Math.round(grand[p] / hcpTotal[p]) : 0;
-    efficiency2026[p] = hcp2026[p] > 0 ? Math.round(y2026[p] / hcp2026[p]) : 0;
+    efficiencyRound[p] = hcpRound[p] > 0 ? Math.round(roundTotal[p] / hcpRound[p]) : 0;
   });
 
   // ---- Sessions: group by Date value, ordered ascending by real date ----
@@ -189,7 +206,7 @@ export function buildModel(rows) {
     return at - bt;
   });
 
-  // ---- Cumulative series (all-time + 2026) ----
+  // ---- Cumulative series (all-time + current round) ----
   function cumulative(sessionList) {
     const running = {}; PLAYERS.forEach((p) => (running[p] = 0));
     const labels = [];
@@ -204,9 +221,9 @@ export function buildModel(rows) {
     return { labels, series };
   }
   const allTime = cumulative(sessions);
-  const sessions2026 = sessions.filter((s) => s.year === 2026);
-  const race2026 = cumulative(sessions2026);
-  const latest2026Session = sessions2026.length ? sessions2026[sessions2026.length - 1] : null;
+  const sessionsRound = sessions.filter((s) => inRound(s.date));
+  const raceRound = cumulative(sessionsRound);
+  const latestRoundSession = sessionsRound.length ? sessionsRound[sessionsRound.length - 1] : null;
 
   // ---- Latest hand (newest timestamp) ----
   let latestRec = null;
@@ -251,13 +268,81 @@ export function buildModel(rows) {
   }
 
   return {
-    records, grand, y2026, hcpTotal, hcp2026, efficiency, efficiency2026,
-    sessions, allTime, race2026, latest2026Session,
+    records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
+    sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands,
     rowCount: records.length,
     newestTsMs: latestRec ? latestRec.tsMs : 0,
     fetchedAt: new Date(),
   };
+}
+
+// =============================================================================
+// Verification — shared by both pages.
+//
+// Proves the round scoping is doing what config.js says it should:
+//   1) every player's round total == the sum of column L over their rows dated
+//      on or after CONFIG.ROUND.START (recomputed from the raw records here,
+//      NOT read back from the field we're checking);
+//   2) the round's session list starts on CONFIG.ROUND.START and contains
+//      nothing dated earlier.
+// Both checks read the date from config, never a hard-coded year or day, so
+// they keep working unchanged for the next round.
+// =============================================================================
+export function verifyRound(m) {
+  /* eslint-disable no-console */
+  console.groupCollapsed(
+    `%c${ROUND.LABEL} — round scoping verification (start ${ROUND.START}, target ${fmtNum(ROUND.TARGET)})`,
+    "font-weight:bold"
+  );
+
+  // ---- 1) Per-player round total vs. raw column-L sum ----
+  let allMatch = true;
+  console.table(PLAYERS.map((p) => {
+    const sumOfColumnL = m.records
+      .filter((r) => r.player === p && r.date && r.date.getTime() >= ROUND_START_MS)
+      .reduce((sum, r) => sum + r.score, 0);
+    const ok = sumOfColumnL === m.roundTotal[p];
+    if (!ok) allMatch = false;
+    return {
+      player: p,
+      roundTotal: m.roundTotal[p],
+      sumOfColumnL,
+      gapToTarget: Math.max(0, ROUND.TARGET - m.roundTotal[p]),
+      check: ok ? "✓ match" : "✗ MISMATCH",
+    };
+  }));
+  console.log(allMatch
+    ? `✓ Every round total equals the sum of column L for that player's rows dated on/after ${ROUND.START}.`
+    : "✗ At least one round total does NOT match the raw column-L sum — investigate.");
+
+  // ---- 2) The sessions that make up the round ----
+  const roundSessions = m.sessionsRound || [];
+  console.log(`Sessions in ${ROUND.LABEL} — ${roundSessions.length} in total:`);
+  console.table(roundSessions.map((s, i) => ({
+    "#": i + 1,
+    date: s.key,
+    label: s.label,
+    ...Object.fromEntries(PLAYERS.map((p) => [p, s.perPlayer[p]])),
+  })));
+
+  const first = roundSessions[0] || null;
+  const firstIsStart = !!first && !!first.date && first.date.getTime() === ROUND_START_MS;
+  console.log(firstIsStart
+    ? `✓ First session of the round is ${first.label} — the configured start (${ROUND.START}).`
+    : `✗ First session is ${first ? first.label : "(none)"} — expected the ${ROUND.START} session.`);
+
+  const noneBefore = roundSessions.every((s) => s.date && s.date.getTime() >= ROUND_START_MS);
+  console.log(noneBefore
+    ? `✓ No session dated before ${ROUND.START} appears in the round.`
+    : `✗ A session dated before ${ROUND.START} leaked into the round.`);
+
+  const excluded = m.sessions.filter((s) => !roundSessions.includes(s));
+  console.log(`Excluded (pre-round) sessions — ${excluded.length}:`, excluded.map((s) => s.label));
+
+  console.groupEnd();
+  return { allMatch, firstIsStart, noneBefore, roundSessions, excluded };
+  /* eslint-enable no-console */
 }
 
 /** Build the "latest hand" summary from the rows of a single hand. */

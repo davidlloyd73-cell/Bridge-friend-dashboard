@@ -1,13 +1,17 @@
 // =============================================================================
 // race.js — "Race to 50,000" live page. Reuses the same Google Sheet fetch and
 // parsing/compute logic as the main dashboard (data.js) so the totals here
-// always match the main dashboard's "2026 total" column exactly.
+// always match the main dashboard's round-total column exactly.
 // =============================================================================
 
-import { CONFIG } from "./config.js";
-import { PLAYERS, COLORS, fmtNum, escapeHtml, fetchRows, buildModel, parseUKDate } from "./data.js";
+import { CONFIG } from "./config.js?v=20260808a";
+import {
+  PLAYERS, COLORS, fmtNum, fmtDate, escapeHtml, fetchRows, buildModel, parseUKDate,
+  ROUND, ROUND_START, verifyRound,
+} from "./data.js?v=20260808a";
 
-const TARGET = 50000;
+// Both the target and the round's name come from CONFIG.ROUND — see config.js.
+const TARGET = CONFIG.ROUND.TARGET;
 
 // ---- Polling / backoff state (same shape as app.js) ----
 let pollTimer = null;
@@ -29,7 +33,7 @@ const $ = (sel) => document.querySelector(sel);
 
 function buildRace(m) {
   const totals = {};
-  PLAYERS.forEach((p) => { totals[p] = m.y2026[p]; });
+  PLAYERS.forEach((p) => { totals[p] = m.roundTotal[p]; });
 
   if (TEST_FORCE_WINNER && PLAYERS.includes(TEST_FORCE_WINNER)) {
     totals[TEST_FORCE_WINNER] = TARGET + 250; // test-only override, see const above
@@ -142,16 +146,25 @@ function renderStrip(race) {
 function renderHeader(m) {
   $("#last-updated").textContent = "Updated " + m.fetchedAt.toLocaleTimeString("en-GB");
   const meta = $("#race-meta");
-  if (m.latest2026Session) {
-    const hands = m.latestSession && m.latestSession.key === m.latest2026Session.key
+  if (m.latestRoundSession) {
+    const hands = m.latestSession && m.latestSession.key === m.latestRoundSession.key
       ? m.latestSessionHands.length
       : null;
     meta.textContent = hands !== null
-      ? `Latest session: ${m.latest2026Session.label} · ${hands} hand${hands === 1 ? "" : "s"} played`
-      : `Latest 2026 session: ${m.latest2026Session.label}`;
+      ? `Latest session: ${m.latestRoundSession.label} · ${hands} hand${hands === 1 ? "" : "s"} played`
+      : `Latest ${ROUND.LABEL} session: ${m.latestRoundSession.label}`;
   } else {
-    meta.textContent = "No 2026 sessions yet";
+    meta.textContent = `No ${ROUND.LABEL} sessions yet`;
   }
+}
+
+/** Footer note: named round + the configured target, never a hard-coded year. */
+function renderFooterNote() {
+  const el = $("#race-footer-note");
+  if (!el) return;
+  el.textContent =
+    `${ROUND.LABEL} only (from ${fmtDate(ROUND_START)}) · target ${fmtNum(TARGET)} · ` +
+    "reads live from the same Google Sheet as the main dashboard";
 }
 
 function renderAll(m) {
@@ -164,19 +177,13 @@ function renderAll(m) {
 }
 
 // =============================================================================
-// Verification: print each player's 2026 total + gap to console.
+// Verification (shared with the main dashboard — see verifyRound in data.js).
 // =============================================================================
 function logVerification(m, race) {
   /* eslint-disable no-console */
-  console.groupCollapsed("%cRace to 50,000 — data verification", "font-weight:bold");
-  console.table(PLAYERS.map((p) => ({
-    player: p,
-    total2026: m.y2026[p],
-    gapTo50000: Math.max(0, TARGET - m.y2026[p]),
-  })));
-  console.log("Leader:", race.leader, fmtNum(race.leaderTotal));
+  verifyRound(m);
+  console.log("Leader:", race.leader, fmtNum(race.leaderTotal), `· target ${fmtNum(TARGET)}`);
   if (race.raceOver) console.log("Winner:", race.winner);
-  console.groupEnd();
   /* eslint-enable no-console */
 }
 let verificationLogged = false;
@@ -238,6 +245,7 @@ function startPolling() {
 }
 
 function init() {
+  renderFooterNote();
   $("#refresh-now").addEventListener("click", () => refresh({ manual: true }));
   refresh({ manual: true }).then(startPolling);
 }
