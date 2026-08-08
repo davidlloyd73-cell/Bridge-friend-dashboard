@@ -47,4 +47,22 @@ export const CONFIG = {
 
   // The four fixed players. Anything else is bucketed into "Unknown".
   PLAYERS: ["David", "Vivienne", "Hamish", "Caroline"],
+
+  // ---------------------------------------------------------------------------
+  // THE CURRENT ROUND (the "Race to 50,000").
+  //
+  // Everything round-scoped — the standings cards/table, the round chart and the
+  // whole race page — is derived from these three values. Nothing anywhere is
+  // tied to a calendar year, so starting a fresh round is a one-line edit here:
+  //   • LABEL  — shown in headings, column headers and footnotes ("Round 3").
+  //   • START  — dd/mm/yyyy, INCLUSIVE. The first session of the round; sessions
+  //              dated on or after this day count, everything earlier does not.
+  //   • TARGET — points needed to win the round.
+  // The all-time totals and the all-time chart are unaffected by this block.
+  // ---------------------------------------------------------------------------
+  ROUND: {
+    LABEL: "Round 2",
+    START: "10/07/2026",
+    TARGET: 50000,
+  },
 };

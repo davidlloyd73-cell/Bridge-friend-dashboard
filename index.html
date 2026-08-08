@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bridge Friends — Live Dashboard</title>
-  <link rel="stylesheet" href="styles.css?v=20260630a" />
+  <link rel="stylesheet" href="styles.css?v=20260808a" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -58,10 +58,12 @@
       </div>
     </section>
 
-    <!-- 2026 STANDINGS -->
+    <!-- CURRENT ROUND STANDINGS.  Every "round" label below is written by
+         app.js from CONFIG.ROUND.LABEL — the text here is only a placeholder
+         for the moment before the script runs. -->
     <section class="panel" aria-labelledby="players-2026-title">
       <div class="section-head">
-        <h2 id="players-2026-title">2026 Standings</h2>
+        <h2 id="players-2026-title">Round Standings</h2>
         <span class="muted small" id="session-2026-label"></span>
       </div>
       <div id="player-cards-2026" class="player-cards"></div>
@@ -72,14 +74,14 @@
             <tr>
               <th data-sort="rank" class="sortable num">#</th>
               <th data-sort="player" class="sortable">Player</th>
-              <th data-sort="y2026" class="sortable num active" aria-sort="descending">2026 total</th>
+              <th data-sort="roundTotal" id="th-round-total" class="sortable num active" aria-sort="descending">Round total</th>
               <th data-sort="session" class="sortable num">This session</th>
               <th data-sort="efficiency" class="sortable num">Efficiency</th>
             </tr>
           </thead>
           <tbody id="standings-2026-body"></tbody>
         </table>
-        <p class="muted small">2026 sessions only. Click a column header to sort. Efficiency = 2026 score ÷ 2026 HCP dealt.</p>
+        <p class="muted small" id="standings-2026-note">Current round only. Click a column header to sort.</p>
       </div>
     </section>
 
@@ -101,7 +103,7 @@
               <th data-sort="rank" class="sortable num">#</th>
               <th data-sort="player" class="sortable">Player</th>
               <th data-sort="grand" class="sortable num active" aria-sort="descending">Grand total</th>
-              <th data-sort="y2026" class="sortable num">2026 total</th>
+              <th data-sort="roundTotal" id="th-round-total-alltime" class="sortable num">Round total</th>
               <th data-sort="session" class="sortable num">This session</th>
               <th data-sort="efficiency" class="sortable num">Efficiency</th>
             </tr>
@@ -120,12 +122,12 @@
       </div>
     </section>
 
-    <!-- 2026 RACE -->
+    <!-- CURRENT ROUND RACE (heading + aria-label written from CONFIG.ROUND.LABEL) -->
     <section class="panel" aria-labelledby="race2026-title">
-      <h2 id="race2026-title">2026 race</h2>
+      <h2 id="race2026-title">Round race</h2>
       <div id="mini-2026" class="mini-leaderboard"></div>
       <div class="chart-box">
-        <canvas id="chart-2026" aria-label="2026 cumulative score line chart" role="img"></canvas>
+        <canvas id="chart-2026" aria-label="Current round cumulative score line chart" role="img"></canvas>
       </div>
     </section>
   </main>
@@ -140,7 +142,10 @@
 
   <!-- App logic (ES module). config.js is imported by app.js. -->
   <!-- The ?v= query is bumped on each code change so browsers fetch the new
-       file instead of a stale cached copy. (Data is always fetched fresh.) -->
-  <script type="module" src="app.js?v=20260630a"></script>
+       file instead of a stale cached copy. (Data is always fetched fresh.)
+       IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
+       import specifiers inside app.js / race.js / data.js as well — those are
+       separate fetches, and a stale data.js is where most of the logic lives. -->
+  <script type="module" src="app.js?v=20260808a"></script>
 </body>
 </html>

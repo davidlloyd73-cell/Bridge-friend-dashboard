@@ -10,7 +10,7 @@ live you never have to touch it.
 
 - No build step, no server, no frameworks — just static HTML/CSS/JS.
 - Polls the sheet every 60 seconds and only re-draws when something changed.
-- Two line charts (all-time race + 2026 race) via Chart.js from a CDN.
+- Two line charts (all-time race + current-round race) via Chart.js from a CDN.
 
 ---
 
@@ -106,14 +106,47 @@ Open that URL — the dashboard is live. 🎉
 | `index.html` | Page structure + the Chart.js CDN tag. |
 | `styles.css` | All styling. The four **player colours** are defined once at the top as CSS variables. |
 | `app.js`     | Fetches the sheet, parses it defensively, computes all the stats, renders, and runs the 60-second polling loop. |
-| `config.js`  | **The file you edit.** API key, sheet ID, range, refresh interval, form link. |
+| `config.js`  | **The file you edit.** API key, sheet ID, range, refresh interval, form link, and the current **round**. |
+| `data.js`    | Shared fetch/parse/compute — used by both `app.js` and `race.js` so the two pages can't disagree. |
+| `race.html` / `race.js` / `race.css` | The live "Race to 50,000" page. |
 | `README.md`  | This file. |
+
+### 🏁 Starting a new round
+
+The race is **not** tied to a calendar year. Everything round-scoped — the round
+standings cards and table, the round chart, and the whole race page — comes from
+one block in `config.js`:
+
+```js
+ROUND: {
+  LABEL: "Round 2",        // shown in headings, column headers and footnotes
+  START: "10/07/2026",     // dd/mm/yyyy, INCLUSIVE — the first session of the round
+  TARGET: 50000,           // points needed to win
+},
+```
+
+To start a fresh round, change those three values — nothing else. All-time
+totals and the all-time chart are unaffected. Open the browser console
+afterwards: a **"round scoping verification"** group prints each player's round
+total next to the raw column-L sum, plus the list of sessions in the round, so
+you can confirm the new start date took effect.
+
+(The `<h1>` and `<title>` on `race.html` still say "Race to 50,000" — if you ever
+change `TARGET`, edit those two lines by hand.)
+
+### ♻️ Cache-busting
+
+Both HTML files load their scripts with a `?v=` query, and `app.js`, `race.js`
+and `data.js` carry the **same** query on their `./data.js` and `./config.js`
+imports. When you change any JS, bump that value **everywhere** — the import
+specifiers are separate fetches, so bumping only the `<script>` tags would leave
+browsers running a cached `data.js`, which is where most of the logic lives.
 
 ### Player colours
 David = **blue**, Vivienne = **green**, Hamish = **orange**, Caroline =
 **purple**. To change them, edit the `--c-*` variables at the top of
 `styles.css` **and** the matching hex values in the `COLORS` object near the top
-of `app.js` (charts read the hex directly).
+of `data.js` (charts read the hex directly).
 
 ---
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Race to 50,000 — Bridge Friends</title>
-  <link rel="stylesheet" href="race.css?v=20260630a" />
+  <link rel="stylesheet" href="race.css?v=20260808a" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
 </head>
 <body>
@@ -43,13 +43,16 @@
   <footer class="race-footer">
     <button class="btn" id="refresh-now">↻ Refresh now</button>
     <a class="btn" href="index.html">View full dashboard</a>
-    <p class="muted small footer-note">
-      2026 round only · target 50,000 · reads live from the same Google Sheet as the main dashboard
+    <!-- Written by race.js from CONFIG.ROUND (label, start date and target). -->
+    <p class="muted small footer-note" id="race-footer-note">
+      Current round only · reads live from the same Google Sheet as the main dashboard
     </p>
   </footer>
 
   <!-- race.js imports data.js, which imports config.js — same data source as the
-       main dashboard. The ?v= query is bumped on each code change. -->
-  <script type="module" src="race.js?v=20260630a"></script>
+       main dashboard. The ?v= query is bumped on each code change. Bump the SAME
+       value on the import specifiers inside app.js / race.js / data.js too, or
+       the browser keeps serving cached copies of data.js and config.js. -->
+  <script type="module" src="race.js?v=20260808a"></script>
 </body>
 </html>

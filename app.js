@@ -5,11 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js";
+import { CONFIG } from "./config.js?v=20260808a";
 import {
-  PLAYERS, COLORS, COL, fmtNum, escapeHtml,
+  PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
   fetchRows, buildModel, parseUKDate,
-} from "./data.js";
+  ROUND, ROUND_START, verifyRound,
+} from "./data.js?v=20260808a";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -20,11 +21,11 @@ let backoffUntil = 0;           // epoch ms; don't fetch before this on errors
 
 // ---- Chart instances (created lazily) ----
 let chartAllTime = null;
-let chart2026 = null;
+let chartRound = null;
 
-// ---- Sort state for the standings table ----
+// ---- Sort state for the standings tables ----
 let sortState = { key: "grand", dir: "desc" };
-let sort2026State = { key: "y2026", dir: "desc" };
+let sortRoundState = { key: "roundTotal", dir: "desc" };
 
 // =============================================================================
 // Rendering
@@ -163,7 +164,7 @@ function renderTable(m) {
   let rows = PLAYERS.map((p) => ({
     player: p,
     grand: m.grand[p],
-    y2026: m.y2026[p],
+    roundTotal: m.roundTotal[p],
     session: sessTotals ? sessTotals[p] : 0,
     efficiency: m.efficiency[p],
   }));
@@ -184,7 +185,7 @@ function renderTable(m) {
       <td class="num">${rankOf.get(r.player)}</td>
       <td class="player-cell"><span class="swatch" style="background:${COLORS[r.player]}"></span>${escapeHtml(r.player)}</td>
       <td class="num">${fmtNum(r.grand)}</td>
-      <td class="num">${fmtNum(r.y2026)}</td>
+      <td class="num">${fmtNum(r.roundTotal)}</td>
       <td class="num">${fmtNum(r.session)}</td>
       <td class="num">${r.efficiency}</td>
     </tr>`).join("");
@@ -202,55 +203,55 @@ function renderTable(m) {
   });
 }
 
-function render2026Cards(m) {
+function renderRoundCards(m) {
   const el = $("#player-cards-2026");
-  const leader = [...PLAYERS].sort((a, b) => m.y2026[b] - m.y2026[a])[0];
-  const sessTotals = m.latest2026Session ? m.latest2026Session.perPlayer : null;
+  const leader = [...PLAYERS].sort((a, b) => m.roundTotal[b] - m.roundTotal[a])[0];
+  const sessTotals = m.latestRoundSession ? m.latestRoundSession.perPlayer : null;
 
   el.innerHTML = PLAYERS.map((p) => {
-    const isLeader = p === leader && m.y2026[p] > 0;
+    const isLeader = p === leader && m.roundTotal[p] > 0;
     const sess = sessTotals ? sessTotals[p] : 0;
     return `
       <div class="pcard ${isLeader ? "leader" : ""}" style="--pc:${COLORS[p]}">
-        ${isLeader ? '<span class="medal" title="2026 leader">🏆</span>' : ""}
+        ${isLeader ? `<span class="medal" title="${escapeHtml(ROUND.LABEL)} leader">🏆</span>` : ""}
         <div class="name"><span class="swatch"></span>${escapeHtml(p)}</div>
-        <div class="big">${fmtNum(m.y2026[p])}</div>
-        <div class="sub"><span>This session: <b>${fmtNum(sess)}</b></span><span>Eff: <b>${m.efficiency2026[p]}</b></span></div>
+        <div class="big">${fmtNum(m.roundTotal[p])}</div>
+        <div class="sub"><span>This session: <b>${fmtNum(sess)}</b></span><span>Eff: <b>${m.efficiencyRound[p]}</b></span></div>
       </div>`;
   }).join("");
 
-  $("#session-2026-label").textContent = m.latest2026Session
-    ? `Latest 2026 session: ${m.latest2026Session.label}`
-    : "No 2026 sessions yet";
+  $("#session-2026-label").textContent = m.latestRoundSession
+    ? `Latest ${ROUND.LABEL} session: ${m.latestRoundSession.label}`
+    : `No ${ROUND.LABEL} sessions yet`;
 }
 
-function render2026Table(m) {
+function renderRoundTable(m) {
   const body = $("#standings-2026-body");
-  const sessTotals = m.latest2026Session ? m.latest2026Session.perPlayer : null;
+  const sessTotals = m.latestRoundSession ? m.latestRoundSession.perPlayer : null;
 
   let rows = PLAYERS.map((p) => ({
     player: p,
-    y2026: m.y2026[p],
+    roundTotal: m.roundTotal[p],
     session: sessTotals ? sessTotals[p] : 0,
-    efficiency: m.efficiency2026[p],
+    efficiency: m.efficiencyRound[p],
   }));
 
-  // Rank is always by 2026 total (independent of current sort).
-  const by2026 = [...rows].sort((a, b) => b.y2026 - a.y2026);
-  const rankOf = new Map(by2026.map((r, i) => [r.player, i + 1]));
+  // Rank is always by round total (independent of current sort).
+  const byRound = [...rows].sort((a, b) => b.roundTotal - a.roundTotal);
+  const rankOf = new Map(byRound.map((r, i) => [r.player, i + 1]));
 
-  const dir = sort2026State.dir === "asc" ? 1 : -1;
+  const dir = sortRoundState.dir === "asc" ? 1 : -1;
   rows.sort((a, b) => {
-    if (sort2026State.key === "player") return a.player.localeCompare(b.player) * dir;
-    if (sort2026State.key === "rank") return (rankOf.get(a.player) - rankOf.get(b.player)) * dir;
-    return (a[sort2026State.key] - b[sort2026State.key]) * dir;
+    if (sortRoundState.key === "player") return a.player.localeCompare(b.player) * dir;
+    if (sortRoundState.key === "rank") return (rankOf.get(a.player) - rankOf.get(b.player)) * dir;
+    return (a[sortRoundState.key] - b[sortRoundState.key]) * dir;
   });
 
   body.innerHTML = rows.map((r) => `
     <tr>
       <td class="num">${rankOf.get(r.player)}</td>
       <td class="player-cell"><span class="swatch" style="background:${COLORS[r.player]}"></span>${escapeHtml(r.player)}</td>
-      <td class="num">${fmtNum(r.y2026)}</td>
+      <td class="num">${fmtNum(r.roundTotal)}</td>
       <td class="num">${fmtNum(r.session)}</td>
       <td class="num">${r.efficiency}</td>
     </tr>`).join("");
@@ -258,9 +259,9 @@ function render2026Table(m) {
   // Update header sort indicators.
   document.querySelectorAll("#standings-2026-table th.sortable").forEach((th) => {
     const key = th.dataset.sort;
-    if (key === sort2026State.key) {
+    if (key === sortRoundState.key) {
       th.classList.add("active");
-      th.setAttribute("aria-sort", sort2026State.dir === "asc" ? "ascending" : "descending");
+      th.setAttribute("aria-sort", sortRoundState.dir === "asc" ? "ascending" : "descending");
     } else {
       th.classList.remove("active");
       th.removeAttribute("aria-sort");
@@ -268,13 +269,13 @@ function render2026Table(m) {
   });
 }
 
-function renderMini2026(m) {
+function renderMiniRound(m) {
   const el = $("#mini-2026");
-  const ranked = [...PLAYERS].sort((a, b) => m.y2026[b] - m.y2026[a]);
+  const ranked = [...PLAYERS].sort((a, b) => m.roundTotal[b] - m.roundTotal[a]);
   el.innerHTML = ranked.map((p, i) => `
     <span class="mini-pill">
       <span class="swatch" style="background:${COLORS[p]}"></span>
-      ${i === 0 && m.y2026[p] > 0 ? "🏆 " : ""}${escapeHtml(p)} <b>${fmtNum(m.y2026[p])}</b>
+      ${i === 0 && m.roundTotal[p] > 0 ? "🏆 " : ""}${escapeHtml(p)} <b>${fmtNum(m.roundTotal[p])}</b>
     </span>`).join("");
 }
 
@@ -323,28 +324,49 @@ function renderCharts(m) {
     chartAllTime.data.datasets.forEach((ds) => (ds.data = m.allTime.series[ds.label]));
     chartAllTime.update();
   }
-  // 2026
-  if (!chart2026) {
-    chart2026 = new Chart($("#chart-2026"), {
+  // Current round
+  if (!chartRound) {
+    chartRound = new Chart($("#chart-2026"), {
       type: "line",
-      data: { labels: m.race2026.labels, datasets: lineDatasets(m.race2026.series) },
+      data: { labels: m.raceRound.labels, datasets: lineDatasets(m.raceRound.series) },
       options: chartOptions(),
     });
   } else {
-    chart2026.data.labels = m.race2026.labels;
-    chart2026.data.datasets.forEach((ds) => (ds.data = m.race2026.series[ds.label]));
-    chart2026.update();
+    chartRound.data.labels = m.raceRound.labels;
+    chartRound.data.datasets.forEach((ds) => (ds.data = m.raceRound.series[ds.label]));
+    chartRound.update();
   }
+}
+
+/**
+ * Stamp the round's name onto the static markup. Everything that used to read
+ * "2026" in a heading, column header, tooltip or footnote is written from
+ * CONFIG.ROUND.LABEL here, so a new round needs no HTML edits.
+ */
+function renderRoundLabels() {
+  const L = ROUND.LABEL;
+  const set = (sel, text) => { const el = $(sel); if (el) el.textContent = text; };
+
+  set("#players-2026-title", `${L} Standings`);
+  set("#race2026-title", `${L} race`);
+  set("#th-round-total", `${L} total`);
+  set("#th-round-total-alltime", `${L} total`);
+  set("#standings-2026-note",
+    `${L} sessions only (from ${fmtDate(ROUND_START)}). Click a column header to sort. ` +
+    `Efficiency = ${L} score ÷ ${L} HCP dealt.`);
+
+  const canvas = $("#chart-2026");
+  if (canvas) canvas.setAttribute("aria-label", `${L} cumulative score line chart`);
 }
 
 function renderAll(m) {
   renderLatestHand(m);
   renderThisSession(m);
-  render2026Cards(m);
-  render2026Table(m);
+  renderRoundCards(m);
+  renderRoundTable(m);
   renderPlayerCards(m);
   renderTable(m);
-  renderMini2026(m);
+  renderMiniRound(m);
   renderCharts(m);
   $("#last-updated").textContent = "Updated " + m.fetchedAt.toLocaleTimeString("en-GB");
 }
@@ -360,7 +382,7 @@ function logVerification(m) {
   console.table(PLAYERS.map((p) => ({
     player: p,
     grandTotal: m.grand[p],
-    total2026: m.y2026[p],
+    roundTotal: m.roundTotal[p],
     totalHCP: m.hcpTotal[p],
     efficiency: m.efficiency[p],
   })));
@@ -377,6 +399,7 @@ function logVerification(m) {
     console.log("✓ Grand totals look like four numbers in the same ballpark.");
   }
   console.groupEnd();
+  verifyRound(m);
   /* eslint-enable no-console */
 }
 let verificationLogged = false;
@@ -444,6 +467,7 @@ function startPolling() {
 // =============================================================================
 function init() {
   $("#add-hand-link").href = CONFIG.FORM_URL;
+  renderRoundLabels();
 
   // Sortable table headers.
   document.querySelectorAll("#standings-table th.sortable").forEach((th) => {
@@ -460,17 +484,17 @@ function init() {
     });
   });
 
-  // Sortable headers for the 2026 standings table.
+  // Sortable headers for the round standings table.
   document.querySelectorAll("#standings-2026-table th.sortable").forEach((th) => {
     th.addEventListener("click", () => {
       const key = th.dataset.sort;
-      if (sort2026State.key === key) {
-        sort2026State.dir = sort2026State.dir === "asc" ? "desc" : "asc";
+      if (sortRoundState.key === key) {
+        sortRoundState.dir = sortRoundState.dir === "asc" ? "desc" : "asc";
       } else {
-        sort2026State.key = key;
-        sort2026State.dir = (key === "player" || key === "rank") ? "asc" : "desc";
+        sortRoundState.key = key;
+        sortRoundState.dir = (key === "player" || key === "rank") ? "asc" : "desc";
       }
-      if (lastGoodModel) render2026Table(lastGoodModel);
+      if (lastGoodModel) renderRoundTable(lastGoodModel);
     });
   });
 
@@ -493,4 +517,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js";
+export { buildModel, parseUKDate } from "./data.js?v=20260808a";
