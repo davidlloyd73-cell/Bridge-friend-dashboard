@@ -84,7 +84,10 @@ export function parseUKDate(v) {
 // exactly the "inclusive from the start of that day" semantics we want.
 export const ROUND = CONFIG.ROUND;
 export const ROUND_START = parseUKDate(CONFIG.ROUND.START);
-export const ROUND_START_MS = ROUND_START ? ROUND_START.getTime() : -Infinity;
+// Fail CLOSED if START is unparseable: an empty round is obviously wrong at a
+// glance, whereas failing open would sweep every session into the round, push
+// all four totals past TARGET and have the race page crown a false champion.
+export const ROUND_START_MS = ROUND_START ? ROUND_START.getTime() : Infinity;
 
 /**
  * Is this date inside the current round? Null/unparseable dates are never in
