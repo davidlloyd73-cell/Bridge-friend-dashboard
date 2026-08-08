@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808e";
+import { CONFIG } from "./config.js?v=20260808f";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260808e";
+} from "./data.js?v=20260808f";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -281,7 +281,6 @@ function renderEfficiencyTable(m) {
   const rows = PLAYERS
     .map((p) => ({
       player: p,
-      hands: m.handsPlayed[p],
       hcp: m.hcpTotal[p],
       perHand: m.hcpPerHand[p],
       efficiency: m.efficiency[p],
@@ -292,7 +291,6 @@ function renderEfficiencyTable(m) {
     <tr>
       <td class="num">${i + 1}</td>
       <td class="player-cell"><span class="swatch" style="background:${COLORS[r.player]}"></span>${escapeHtml(r.player)}</td>
-      <td class="num">${fmtNum(r.hands)}</td>
       <td class="num">${fmtNum(r.hcp)}</td>
       <td class="num">${r.perHand.toFixed(1)}</td>
       <td class="num">${r.efficiency}</td>
@@ -667,4 +665,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260808e";
+export { buildModel, parseUKDate } from "./data.js?v=20260808f";
