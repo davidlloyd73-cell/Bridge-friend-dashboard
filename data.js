@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808b";
+import { CONFIG } from "./config.js?v=20260808c";
 
 // ---- Fixed players & their signature colours (hex must match styles.css) ----
 export const PLAYERS = CONFIG.PLAYERS; // ["David","Vivienne","Hamish","Caroline"]

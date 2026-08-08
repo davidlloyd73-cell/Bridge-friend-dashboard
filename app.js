@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808b";
+import { CONFIG } from "./config.js?v=20260808c";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260808b";
+} from "./data.js?v=20260808c";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -310,9 +310,47 @@ function chartOptions() {
   };
 }
 
+/**
+ * Top of the round chart's y-axis. Normally the target itself, so the height of
+ * every line reads directly as "how far towards 50,000". If someone goes past
+ * the target we grow the axis in whole tick steps rather than clip their line.
+ */
+function roundYMax(m) {
+  const target = ROUND.TARGET;
+  const step = target / 5;
+  const highest = Math.max(0, ...PLAYERS.map((p) => {
+    const s = m.raceRound.series[p];
+    return s && s.length ? s[s.length - 1] : 0;
+  }));
+  return highest > target ? Math.ceil(highest / step) * step : target;
+}
+
+/**
+ * The round chart is a race to a fixed finish, so its y-axis is anchored to
+ * CONFIG.ROUND.TARGET instead of auto-scaling to the data. That makes each
+ * point readable as progress towards the target, and keeps the shape of the
+ * race honest as the round goes on (an auto-scaled axis re-zooms every session
+ * and makes a 3,000-point lead look identical to a 30,000-point one).
+ */
+function roundChartOptions(m) {
+  const target = ROUND.TARGET;
+  const o = chartOptions();
+  o.scales.y.max = roundYMax(m);
+  o.scales.y.ticks.stepSize = target / 5;
+  // The gridline at the target is the finish line — draw it stronger than the
+  // recessive grid so the top of the chart reads as a goal, not a bound.
+  o.scales.y.grid = {
+    color: (c) => (c.tick && c.tick.value === target ? "#dc2626" : "rgba(0,0,0,0.08)"),
+    lineWidth: (c) => (c.tick && c.tick.value === target ? 2 : 1),
+  };
+  o.plugins.tooltip.callbacks.label = (c) =>
+    `${c.dataset.label}: ${fmtNum(c.parsed.y)} · ${Math.round((c.parsed.y / target) * 100)}% of ${fmtNum(target)}`;
+  return o;
+}
+
 function renderCharts(m) {
   if (typeof window.Chart === "undefined") return; // CDN not ready yet
-  // All-time
+  // All-time — auto-scaled; it has no finish line to aim at.
   if (!chartAllTime) {
     chartAllTime = new Chart($("#chart-alltime"), {
       type: "line",
@@ -324,16 +362,17 @@ function renderCharts(m) {
     chartAllTime.data.datasets.forEach((ds) => (ds.data = m.allTime.series[ds.label]));
     chartAllTime.update();
   }
-  // Current round
+  // Current round — axis pinned to the target.
   if (!chartRound) {
     chartRound = new Chart($("#chart-2026"), {
       type: "line",
       data: { labels: m.raceRound.labels, datasets: lineDatasets(m.raceRound.series) },
-      options: chartOptions(),
+      options: roundChartOptions(m),
     });
   } else {
     chartRound.data.labels = m.raceRound.labels;
     chartRound.data.datasets.forEach((ds) => (ds.data = m.raceRound.series[ds.label]));
+    chartRound.options.scales.y.max = roundYMax(m); // may grow past the target
     chartRound.update();
   }
 }
@@ -348,7 +387,7 @@ function renderRoundLabels() {
   const set = (sel, text) => { const el = $(sel); if (el) el.textContent = text; };
 
   set("#players-2026-title", `${L} Standings`);
-  set("#race2026-title", `${L} race`);
+  set("#race2026-title", `${L} race — to ${fmtNum(ROUND.TARGET)}`);
   set("#th-round-total", `${L} total`);
   set("#th-round-total-alltime", `${L} total`);
   set("#standings-2026-note",
@@ -356,7 +395,10 @@ function renderRoundLabels() {
     `Efficiency = ${L} score ÷ ${L} HCP dealt.`);
 
   const canvas = $("#chart-2026");
-  if (canvas) canvas.setAttribute("aria-label", `${L} cumulative score line chart`);
+  if (canvas) {
+    canvas.setAttribute("aria-label",
+      `${L} cumulative score line chart, scaled from 0 to the ${fmtNum(ROUND.TARGET)} target`);
+  }
 }
 
 function renderAll(m) {
@@ -517,4 +559,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260808b";
+export { buildModel, parseUKDate } from "./data.js?v=20260808c";
