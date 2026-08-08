@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808d";
+import { CONFIG } from "./config.js?v=20260808e";
 
 // ---- Fixed players & their signature colours (hex must match tokens.css) ----
 // These are the same five values as --c-david … --c-unknown in tokens.css.
@@ -217,20 +217,28 @@ export function buildModel(rows) {
   });
 
   // ---- Per-player totals (all-time + current round) ----
-  const grand = {}, roundTotal = {}, hcpTotal = {}, hcpRound = {};
-  PLAYERS.forEach((p) => { grand[p] = 0; roundTotal[p] = 0; hcpTotal[p] = 0; hcpRound[p] = 0; });
+  // handsPlayed counts this player's rows: the sheet holds one row per player
+  // per hand, so a row IS a hand from that player's seat.
+  const grand = {}, roundTotal = {}, hcpTotal = {}, hcpRound = {}, handsPlayed = {};
+  PLAYERS.forEach((p) => {
+    grand[p] = 0; roundTotal[p] = 0; hcpTotal[p] = 0; hcpRound[p] = 0; handsPlayed[p] = 0;
+  });
 
   records.forEach((rec) => {
     if (!(rec.player in grand)) return; // skip "Unknown" from leaderboard maths
     grand[rec.player] += rec.score;
     hcpTotal[rec.player] += rec.hcp;
+    handsPlayed[rec.player] += 1;
     if (rec.inRound) { roundTotal[rec.player] += rec.score; hcpRound[rec.player] += rec.hcp; }
   });
 
-  const efficiency = {}, efficiencyRound = {};
+  // efficiency  = points won per high-card point held (rounded, as before)
+  // hcpPerHand  = the average strength of the hands you were dealt
+  const efficiency = {}, efficiencyRound = {}, hcpPerHand = {};
   PLAYERS.forEach((p) => {
     efficiency[p] = hcpTotal[p] > 0 ? Math.round(grand[p] / hcpTotal[p]) : 0;
     efficiencyRound[p] = hcpRound[p] > 0 ? Math.round(roundTotal[p] / hcpRound[p]) : 0;
+    hcpPerHand[p] = handsPlayed[p] > 0 ? hcpTotal[p] / handsPlayed[p] : 0;
   });
 
   // ---- Sessions: group by calendar day, ordered ascending by real date ----
@@ -317,6 +325,7 @@ export function buildModel(rows) {
 
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
+    handsPlayed, hcpPerHand,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands,
     rowCount: records.length,

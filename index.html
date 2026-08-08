@@ -10,7 +10,7 @@
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20260808d" />
+  <link rel="stylesheet" href="styles.css?v=20260808e" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -91,6 +91,15 @@
       </div>
     </section>
 
+    <!-- CURRENT ROUND RACE (heading + aria-label written from CONFIG.ROUND.LABEL) -->
+    <section class="panel" aria-labelledby="race2026-title">
+      <h2 id="race2026-title">Round race</h2>
+      <div id="mini-2026" class="mini-leaderboard"></div>
+      <div class="chart-box">
+        <canvas id="chart-2026" aria-label="Current round cumulative score line chart" role="img"></canvas>
+      </div>
+    </section>
+
     <!-- LEADERBOARD CARDS -->
     <section class="panel" aria-labelledby="players-title">
       <div class="section-head">
@@ -120,20 +129,41 @@
       </div>
     </section>
 
+        
+    <!-- EFFICIENCY -->
+    <section class="panel" aria-labelledby="efficiency-title">
+      <div class="section-head">
+        <h2 id="efficiency-title">Efficiency</h2>
+        <span class="muted small">All-time</span>
+      </div>
+      <div class="table-wrap">
+        <table id="efficiency-table" class="standings">
+          <thead>
+            <tr>
+              <th class="num">#</th>
+              <th>Player</th>
+              <th class="num">Hands</th>
+              <th class="num">Total HCP</th>
+              <th class="num">HCP / hand</th>
+              <th class="num">Efficiency</th>
+            </tr>
+          </thead>
+          <tbody id="efficiency-body"></tbody>
+        </table>
+        <p class="muted small">
+          Efficiency = total score ÷ total HCP dealt: points won per high-card point held.
+          Higher means you squeezed more out of the cards you were given. HCP / hand is the
+          average strength of your hands — if two players differ there, the deal has been
+          kinder to one of them. Ranked by efficiency.
+        </p>
+      </div>
+    </section>
+
     <!-- ALL-TIME RACE -->
     <section class="panel" aria-labelledby="race-title">
       <h2 id="race-title">Cumulative score race <span class="muted small">(all-time)</span></h2>
       <div class="chart-box">
         <canvas id="chart-alltime" aria-label="All-time cumulative score line chart" role="img"></canvas>
-      </div>
-    </section>
-
-    <!-- CURRENT ROUND RACE (heading + aria-label written from CONFIG.ROUND.LABEL) -->
-    <section class="panel" aria-labelledby="race2026-title">
-      <h2 id="race2026-title">Round race</h2>
-      <div id="mini-2026" class="mini-leaderboard"></div>
-      <div class="chart-box">
-        <canvas id="chart-2026" aria-label="Current round cumulative score line chart" role="img"></canvas>
       </div>
     </section>
   </main>
@@ -152,6 +182,6 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script type="module" src="app.js?v=20260808d"></script>
+  <script type="module" src="app.js?v=20260808e"></script>
 </body>
 </html>
