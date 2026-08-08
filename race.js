@@ -4,11 +4,11 @@
 // always match the main dashboard's round-total column exactly.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808a";
+import { CONFIG } from "./config.js?v=20260808b";
 import {
   PLAYERS, COLORS, fmtNum, fmtDate, escapeHtml, fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260808a";
+} from "./data.js?v=20260808b";
 
 // Both the target and the round's name come from CONFIG.ROUND — see config.js.
 const TARGET = CONFIG.ROUND.TARGET;

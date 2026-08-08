@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808a";
+import { CONFIG } from "./config.js?v=20260808b";
 
 // ---- Fixed players & their signature colours (hex must match styles.css) ----
 export const PLAYERS = CONFIG.PLAYERS; // ["David","Vivienne","Hamish","Caroline"]
@@ -52,13 +52,38 @@ export function normPlayer(v) {
   return hit || "Unknown";
 }
 
+// A Google Sheets date "serial": days since 30 Dec 1899. The Form sometimes
+// writes a real date VALUE into column B rather than text, and if that cell's
+// number format is plain the Sheets API hands us the bare serial ("46242")
+// instead of "08/08/2026". Range guard = 1954-2064, which is comfortably wider
+// than any bridge session and still excludes hand numbers, scores and HCP.
+const SERIAL_EPOCH = { y: 1899, m: 11, d: 30 };
+const SERIAL_MIN = 20000;
+const SERIAL_MAX = 60000;
+
 /**
  * Parse a UK date string "dd/mm/yyyy" (optionally with " HH:MM:SS") into a Date.
- * Never interprets as US mm/dd. Returns null if unparseable.
+ * Also accepts a Google Sheets date serial number (see above). Never interprets
+ * as US mm/dd. Returns null if unparseable.
  */
 export function parseUKDate(v) {
-  if (!v) return null;
+  if (v === null || v === undefined) return null;
   const str = String(v).trim();
+  if (str === "") return null;
+
+  // Bare number => Sheets serial. Built with the same local-midnight semantics
+  // as the dd/mm/yyyy branch below, so both spellings of one day compare equal.
+  if (/^\d+(\.\d+)?$/.test(str)) {
+    const n = parseFloat(str);
+    if (!Number.isFinite(n) || n < SERIAL_MIN || n > SERIAL_MAX) return null;
+    const days = Math.floor(n);
+    const d = new Date(SERIAL_EPOCH.y, SERIAL_EPOCH.m, SERIAL_EPOCH.d + days);
+    // Fractional part = time of day.
+    const ms = Math.round((n - days) * 24 * 60 * 60 * 1000);
+    if (ms) d.setTime(d.getTime() + ms);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
   const [datePart, timePart] = str.split(/\s+/, 2);
   const m = datePart.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
   if (!m) return null;
@@ -95,6 +120,16 @@ export const ROUND_START_MS = ROUND_START ? ROUND_START.getTime() : Infinity;
  */
 export function inRound(date) {
   return !!date && date.getTime() >= ROUND_START_MS;
+}
+
+/**
+ * Stable per-day identity for a Date, e.g. "2026-08-08". Used as the session
+ * key so grouping never depends on how the cell happened to be typed.
+ */
+export function dayKey(d) {
+  if (!d) return null;
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
 /** Short, friendly date label for chart axes & headings, e.g. "7 Jun 25". */
@@ -171,6 +206,10 @@ export function buildModel(rows) {
       doubled: String(r[COL.DOUBLED] ?? "").trim(),
       score: num(r[COL.SCORE]),
       inRound: inRound(date),
+      // Which session this row belongs to. Derived from the parsed day so it
+      // survives column B being written as text on one row and as a Sheets
+      // date serial on the next.
+      sessionKey: dayKey(date) || String(r[COL.DATE] ?? "").trim() || "(no date)",
     };
   });
 
@@ -191,10 +230,13 @@ export function buildModel(rows) {
     efficiencyRound[p] = hcpRound[p] > 0 ? Math.round(roundTotal[p] / hcpRound[p]) : 0;
   });
 
-  // ---- Sessions: group by Date value, ordered ascending by real date ----
-  const sessionMap = new Map(); // key = rawDate string -> { date, label, perPlayer{} }
+  // ---- Sessions: group by calendar day, ordered ascending by real date ----
+  // Keyed on the PARSED day, not the raw cell text, so one session can't split
+  // in two when column B holds the same day spelled differently ("08/08/2026"
+  // in some rows, the serial "46242" in others).
+  const sessionMap = new Map(); // key = yyyy-mm-dd -> { date, label, perPlayer{} }
   records.forEach((rec) => {
-    const key = rec.rawDate || "(no date)";
+    const key = rec.sessionKey;
     if (!sessionMap.has(key)) {
       const per = {}; PLAYERS.forEach((p) => (per[p] = 0));
       sessionMap.set(key, { key, date: rec.date, label: fmtDate(rec.date), perPlayer: per, year: rec.year });
@@ -234,24 +276,24 @@ export function buildModel(rows) {
     if (!latestRec || rec.tsMs > latestRec.tsMs) latestRec = rec;
   });
 
-  // All rows belonging to the latest hand = same rawDate + same hand number.
+  // All rows belonging to the latest hand = same session + same hand number.
   let latestHand = null;
   if (latestRec) {
     const handRows = records.filter(
-      (r) => r.rawDate === latestRec.rawDate && r.hand === latestRec.hand
+      (r) => r.sessionKey === latestRec.sessionKey && r.hand === latestRec.hand
     );
     latestHand = summariseHand(handRows, latestRec);
   }
 
   // The latest *session* is the date of the newest-timestamp row.
-  const latestSessionKey = latestRec ? (latestRec.rawDate || "(no date)") : null;
+  const latestSessionKey = latestRec ? latestRec.sessionKey : null;
   const latestSession = sessionMap.get(latestSessionKey) || null;
 
   // Hand-by-hand breakdown for the latest session: group that session's rows by
   // hand number, summarise each, and order by hand number (then timestamp).
   let latestSessionHands = [];
   if (latestRec) {
-    const sessRows = records.filter((r) => (r.rawDate || "(no date)") === latestSessionKey);
+    const sessRows = records.filter((r) => r.sessionKey === latestSessionKey);
     const byHand = new Map();
     sessRows.forEach((r) => {
       if (!byHand.has(r.hand)) byHand.set(r.hand, []);
@@ -342,6 +384,23 @@ export function verifyRound(m) {
 
   const excluded = m.sessions.filter((s) => !roundSessions.includes(s));
   console.log(`Excluded (pre-round) sessions — ${excluded.length}:`, excluded.map((s) => s.label));
+
+  // ---- 3) Undated rows. These belong to NO session, so they are invisible on
+  //         both charts and count towards no round — exactly the failure mode
+  //         where a hand is entered but the graph never moves. Never silent.
+  const undated = m.records.filter((r) => !r.date);
+  if (undated.length) {
+    console.warn(
+      `⚠ ${undated.length} row(s) have an unreadable date in column B and are excluded ` +
+      `from every session, chart and round total. Raw values seen: ` +
+      `${[...new Set(undated.map((r) => JSON.stringify(r.rawDate)))].join(", ")}`
+    );
+    console.table(undated.map((r) => ({
+      hand: r.hand, player: r.player, columnB: r.rawDate, score: r.score,
+    })));
+  } else {
+    console.log("✓ Every row has a readable date — no hands stranded off the charts.");
+  }
 
   console.groupEnd();
   return { allMatch, firstIsStart, noneBefore, roundSessions, excluded };
