@@ -1,21 +1,15 @@
+@import url("tokens.css?v=20260808d");
+
 /* =============================================================================
    race.css — "Race to 50,000" live page
-   Big, playful, sprint-to-the-line layout. Player colours match styles.css
-   (the main dashboard) exactly, kept in sync via the COLORS map in data.js.
-   ============================================================================= */
+   Big, sprint-to-the-line layout in the house style: deep navy ground, teal
+   and gold accents. ALL tokens — colours, shadow, radius, fonts — come from
+   tokens.css (imported above), shared with styles.css, so the two pages can
+   never drift. Player colours live there once and must match data.js.
 
-:root {
-  --bg: #f6f7fb;
-  --panel: #ffffff;
-  --ink: #1f2430;
-  --ink-soft: #5b6472;
-  --muted: #8a93a3;
-  --line: #e7e9f0;
-  --shadow: 0 1px 3px rgba(20, 24, 40, .06), 0 8px 24px rgba(20, 24, 40, .05);
-  --radius: 16px;
-  --good: #16a34a;
-  --track-bg: #eef1f8;
-}
+   Lane and pill colours come from the --pc custom property that race.js sets
+   inline per player; the values below are only the pre-render fallback.
+   ============================================================================= */
 
 * { box-sizing: border-box; }
 
@@ -27,10 +21,10 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background: var(--navy-900);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  line-height: 1.45;
+  font-family: var(--font-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -47,7 +41,7 @@ main {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: linear-gradient(180deg, #ffffff, #ffffffee);
+  background: linear-gradient(180deg, var(--navy-900), rgba(14, 35, 56, .88));
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--line);
   padding-bottom: 6px;
@@ -63,6 +57,8 @@ main {
   gap: 10px;
 }
 .race-header h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
   font-size: clamp(1.3rem, 4vw, 1.8rem);
   margin: 0;
   letter-spacing: -.01em;
@@ -83,7 +79,7 @@ main {
   color: var(--ink-soft);
   text-decoration: none;
 }
-.back-link:hover { color: var(--ink); text-decoration: underline; }
+.back-link:hover { color: var(--teal); text-decoration: underline; }
 
 .header-status {
   display: flex;
@@ -91,14 +87,19 @@ main {
   gap: 12px;
   flex-wrap: wrap;
 }
-.last-updated { color: var(--ink-soft); font-size: .85rem; }
+.last-updated {
+  color: var(--ink-soft);
+  font-size: .85rem;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
 .refresh-indicator {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: .8rem;
   color: var(--ink-soft);
-  background: #eef2ff;
+  background: var(--navy-700);
   padding: 3px 9px;
   border-radius: 999px;
 }
@@ -112,7 +113,7 @@ main {
 .spinner {
   width: 15px; height: 15px;
   border: 2px solid var(--line);
-  border-top-color: #2563eb;
+  border-top-color: var(--teal);
   border-radius: 50%;
   animation: spin .7s linear infinite;
   display: inline-block;
@@ -123,17 +124,17 @@ main {
   max-width: 980px;
   margin: 0 auto;
   padding: 6px 16px 8px;
-  color: #92400e;
+  color: var(--gold);
   font-size: .85rem;
 }
 .error-banner::before { content: "⚠ "; }
 
 /* ---------- Photo finish banner ---------- */
 .photo-finish {
-  --pf-color: #2563eb;
-  border-radius: var(--radius);
+  --pf-color: var(--gold);
+  border-radius: var(--radius-lg);
   padding: 18px 20px;
-  background: color-mix(in srgb, var(--pf-color) 14%, white);
+  background: color-mix(in srgb, var(--pf-color) 18%, var(--navy-800));
   border: 2px solid var(--pf-color);
   box-shadow: var(--shadow);
   animation: pf-pop .5s ease-out;
@@ -143,25 +144,30 @@ main {
   100% { transform: scale(1); opacity: 1; }
 }
 .pf-main {
+  font-family: var(--font-display);
   font-size: clamp(1.3rem, 5vw, 1.9rem);
-  font-weight: 800;
+  font-weight: 600;
   color: var(--pf-color);
   letter-spacing: -.01em;
 }
 .pf-sub { margin-top: 4px; font-size: 1rem; color: var(--ink); }
+.pf-sub b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .pf-extra { margin-top: 6px; font-size: .85rem; color: var(--ink-soft); }
 
 /* ---------- Panels ---------- */
 .panel {
-  background: var(--panel);
+  min-width: 0;
+  background: var(--navy-800);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   padding: 18px;
 }
 .panel h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
   margin: 0 0 14px;
-  font-size: 1.05rem;
+  font-size: 1.12rem;
   letter-spacing: -.01em;
 }
 .muted { color: var(--muted); }
@@ -171,7 +177,7 @@ main {
 .track { display: grid; gap: 22px; }
 
 .lane {
-  --pc: #2563eb;
+  --pc: var(--teal);
   display: grid;
   gap: 6px;
 }
@@ -183,8 +189,9 @@ main {
   flex-wrap: wrap;
 }
 .lane-name {
-  font-weight: 800;
-  font-size: clamp(1.05rem, 3.5vw, 1.3rem);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.2rem, 3.5vw, 1.35rem);
   color: var(--pc);
   display: inline-flex;
   align-items: center;
@@ -192,7 +199,8 @@ main {
 }
 .trophy { font-size: 1.05em; }
 .lane-total {
-  font-weight: 700;
+  font-weight: 600;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: clamp(1rem, 3vw, 1.15rem);
 }
@@ -214,7 +222,7 @@ main {
   position: absolute;
   inset: 0;
   width: 0%;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--pc) 55%, white), var(--pc));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--pc) 45%, var(--navy-700)), var(--pc));
   border-radius: 999px;
   transition: width 800ms ease-out;
 }
@@ -233,7 +241,7 @@ main {
   top: -4px;
   bottom: -4px;
   width: 0;
-  border-left: 3px dashed #b8bfcf;
+  border-left: 3px dashed var(--gold);
   z-index: 1;
 }
 
@@ -249,7 +257,7 @@ main {
   gap: 10px;
 }
 .glory-pill {
-  --pc: #2563eb;
+  --pc: var(--teal);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -258,12 +266,12 @@ main {
   border-radius: 999px;
   padding: 7px 14px 7px 10px;
   font-size: .95rem;
-  background: #fafbff;
+  background: var(--navy-700);
 }
 .glory-pill .swatch {
   width: 10px; height: 10px; border-radius: 50%; background: var(--pc);
 }
-.glory-pill b { font-variant-numeric: tabular-nums; }
+.glory-pill b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
 /* ---------- Footer ---------- */
 .race-footer {
@@ -278,7 +286,7 @@ main {
 .btn {
   appearance: none;
   border: 1px solid var(--line);
-  background: var(--panel);
+  background: var(--navy-700);
   color: var(--ink);
   font: inherit;
   font-weight: 600;
@@ -288,7 +296,7 @@ main {
   text-decoration: none;
   box-shadow: var(--shadow);
 }
-.btn:hover { border-color: #cfd4e0; }
+.btn:hover { border-color: var(--teal-dim); background: var(--navy-800); }
 .footer-note { flex-basis: 100%; margin: 4px 0 0; }
 
 @media (max-width: 560px) {

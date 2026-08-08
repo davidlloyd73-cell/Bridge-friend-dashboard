@@ -4,16 +4,19 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808c";
+import { CONFIG } from "./config.js?v=20260808d";
 
-// ---- Fixed players & their signature colours (hex must match styles.css) ----
+// ---- Fixed players & their signature colours (hex must match tokens.css) ----
+// These are the same five values as --c-david … --c-unknown in tokens.css.
+// Chart.js needs a literal hex (it draws to canvas and can't read a CSS custom
+// property), so the pair is kept in sync by hand — change both or neither.
 export const PLAYERS = CONFIG.PLAYERS; // ["David","Vivienne","Hamish","Caroline"]
 export const COLORS = {
-  David: "#2563eb",
-  Vivienne: "#16a34a",
-  Hamish: "#ea580c",
-  Caroline: "#9333ea",
-  Unknown: "#6b7280",
+  David: "#D4A24C",    // gold
+  Vivienne: "#2AA198", // teal
+  Hamish: "#E08A4B",   // amber
+  Caroline: "#A98BC7", // violet
+  Unknown: "#8898AC",  // slate
 };
 
 // Column indices for the raw "Form responses 1" tab, range A:L.

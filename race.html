@@ -4,7 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Race to 50,000 — Bridge Friends</title>
-  <link rel="stylesheet" href="race.css?v=20260808c" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Fraunces (display) · Spectral (body) · IBM Plex Mono (all numerals).
+       400/600 only, and display=swap so text paints in the fallback stack
+       immediately rather than blocking on the webfont. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
+  <link rel="stylesheet" href="race.css?v=20260808d" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
 </head>
 <body>
@@ -53,6 +59,6 @@
        main dashboard. The ?v= query is bumped on each code change. Bump the SAME
        value on the import specifiers inside app.js / race.js / data.js too, or
        the browser keeps serving cached copies of data.js and config.js. -->
-  <script type="module" src="race.js?v=20260808c"></script>
+  <script type="module" src="race.js?v=20260808d"></script>
 </body>
 </html>

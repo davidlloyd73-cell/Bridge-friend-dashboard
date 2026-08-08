@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808c";
+import { CONFIG } from "./config.js?v=20260808d";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260808c";
+} from "./data.js?v=20260808d";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -294,18 +294,60 @@ function lineDatasets(series) {
   }));
 }
 
+/**
+ * Read a design token off :root. Chart.js draws to canvas and cannot resolve a
+ * CSS custom property itself, so anything it paints has to be handed a resolved
+ * value. Reading them here rather than hardcoding keeps tokens.css the single
+ * source of truth — restyle there and the charts follow.
+ */
+function token(name, fallback) {
+  if (typeof getComputedStyle === "undefined") return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
 function chartOptions() {
+  // On the navy ground Chart.js's default grey axes and grid are all but
+  // invisible, so tick, grid and legend colours are set explicitly.
+  const inkSoft = token("--ink-soft", "#C3CCD8");
+  const ink = token("--ink", "#F2EFE9");
+  const line = token("--line", "#24405C");
+  const mono = token("--font-mono", "ui-monospace, Menlo, monospace");
+  const body = token("--font-body", "Georgia, serif");
   return {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: "index", intersect: false },
     plugins: {
-      legend: { position: "top", labels: { usePointStyle: true, boxWidth: 8, padding: 16 } },
-      tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${fmtNum(c.parsed.y)}` } },
+      legend: {
+        position: "top",
+        labels: {
+          usePointStyle: true, boxWidth: 8, padding: 16,
+          color: ink,
+          font: { family: body, size: 13 },
+        },
+      },
+      tooltip: {
+        callbacks: { label: (c) => `${c.dataset.label}: ${fmtNum(c.parsed.y)}` },
+        titleFont: { family: body },
+        bodyFont: { family: mono },
+      },
     },
     scales: {
-      y: { beginAtZero: true, ticks: { callback: (v) => fmtNum(v) } },
-      x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
+      y: {
+        beginAtZero: true,
+        ticks: { callback: (v) => fmtNum(v), color: inkSoft, font: { family: mono, size: 11 } },
+        grid: { color: line },
+        border: { color: line },
+      },
+      x: {
+        ticks: {
+          maxRotation: 0, autoSkip: true, maxTicksLimit: 10,
+          color: inkSoft, font: { family: mono, size: 11 },
+        },
+        grid: { color: line },
+        border: { color: line },
+      },
     },
   };
 }
@@ -337,10 +379,13 @@ function roundChartOptions(m) {
   const o = chartOptions();
   o.scales.y.max = roundYMax(m);
   o.scales.y.ticks.stepSize = target / 5;
-  // The gridline at the target is the finish line — draw it stronger than the
-  // recessive grid so the top of the chart reads as a goal, not a bound.
+  // The gridline at the target is the finish line — gold and heavier than the
+  // recessive grid, matching the dashed gold finish line on the race page, so
+  // the top of the chart reads as a goal rather than a bound.
+  const grid = token("--line", "#24405C");
+  const finish = token("--gold", "#D4A24C");
   o.scales.y.grid = {
-    color: (c) => (c.tick && c.tick.value === target ? "#dc2626" : "rgba(0,0,0,0.08)"),
+    color: (c) => (c.tick && c.tick.value === target ? finish : grid),
     lineWidth: (c) => (c.tick && c.tick.value === target ? 2 : 1),
   };
   o.plugins.tooltip.callbacks.label = (c) =>
@@ -559,4 +604,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260808c";
+export { buildModel, parseUKDate } from "./data.js?v=20260808d";

@@ -104,7 +104,8 @@ Open that URL — the dashboard is live. 🎉
 | File         | What it is |
 |--------------|------------|
 | `index.html` | Page structure + the Chart.js CDN tag. |
-| `styles.css` | All styling. The four **player colours** are defined once at the top as CSS variables. |
+| `styles.css` | Dashboard styling. Imports `tokens.css`; declares no colours of its own. |
+| `tokens.css` | **All design tokens** — the navy/teal/gold palette, player colours, shadow, radius and the three font stacks. Shared by both pages; edit a colour here and both follow. |
 | `app.js`     | Fetches the sheet, parses it defensively, computes all the stats, renders, and runs the 60-second polling loop. |
 | `config.js`  | **The file you edit.** API key, sheet ID, range, refresh interval, form link, and the current **round**. |
 | `data.js`    | Shared fetch/parse/compute — used by both `app.js` and `race.js` so the two pages can't disagree. |
@@ -136,17 +137,20 @@ change `TARGET`, edit those two lines by hand.)
 
 ### ♻️ Cache-busting
 
-Both HTML files load their scripts with a `?v=` query, and `app.js`, `race.js`
-and `data.js` carry the **same** query on their `./data.js` and `./config.js`
-imports. When you change any JS, bump that value **everywhere** — the import
-specifiers are separate fetches, so bumping only the `<script>` tags would leave
-browsers running a cached `data.js`, which is where most of the logic lives.
+Both HTML files load their scripts with a `?v=` query, `app.js`/`race.js`/`data.js`
+carry the **same** query on their `./data.js` and `./config.js` imports, and
+`styles.css`/`race.css` carry it on their `@import` of `tokens.css`. When you
+change anything, bump that value **everywhere** — each of those is a separate
+fetch, so bumping only the `<script>` tags would leave browsers running a cached
+`data.js` (where most of the logic lives) or a cached `tokens.css` (where every
+colour lives). Twelve places in total; grep for the current value to find them.
 
 ### Player colours
 David = **blue**, Vivienne = **green**, Hamish = **orange**, Caroline =
 **purple**. To change them, edit the `--c-*` variables at the top of
-`styles.css` **and** the matching hex values in the `COLORS` object near the top
-of `data.js` (charts read the hex directly).
+`tokens.css` (`--c-david` … `--c-unknown`) **and** the matching hex values in the
+`COLORS` object near the top of `data.js` — Chart.js draws to canvas and cannot
+read a CSS custom property, so those two lists are kept in step by hand.
 
 ---
 

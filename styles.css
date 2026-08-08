@@ -1,39 +1,23 @@
+@import url("tokens.css?v=20260808d");
+
 /* =============================================================================
    styles.css — Bridge Friends Live Dashboard
-   Light theme, responsive, large numbers. Player signature colours are defined
-   ONCE here as CSS variables and reused everywhere (cards, table, charts).
-   The chart line colours in app.js read these same hex values.
+   House style: deep navy ground, teal and gold accents, warm off-white text.
+   Responsive, large numbers. ALL design tokens — colours, shadow, radius and
+   the three font stacks — live in tokens.css, which is imported above and
+   shared with race.css. Player signature colours are defined there once and
+   must match the COLORS map in data.js (the charts read the hex from there).
    ============================================================================= */
-
-:root {
-  /* Player signature colours (used in cards, table dots, and chart lines) */
-  --c-david:    #2563eb; /* blue   */
-  --c-vivienne: #16a34a; /* green  */
-  --c-hamish:   #ea580c; /* orange */
-  --c-caroline: #9333ea; /* purple */
-  --c-unknown:  #6b7280; /* grey   */
-
-  --bg:        #f6f7fb;
-  --panel:     #ffffff;
-  --ink:       #1f2430;
-  --ink-soft:  #5b6472;
-  --muted:     #8a93a3;
-  --line:      #e7e9f0;
-  --shadow:    0 1px 3px rgba(20, 24, 40, .06), 0 8px 24px rgba(20, 24, 40, .05);
-  --radius:    14px;
-  --good:      #16a34a;
-  --bad:       #dc2626;
-}
 
 * { box-sizing: border-box; }
 
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background: var(--navy-900);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  line-height: 1.45;
+  font-family: var(--font-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -50,7 +34,7 @@ main {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: linear-gradient(180deg, #ffffff, #ffffffee);
+  background: linear-gradient(180deg, var(--navy-900), rgba(14, 35, 56, .88));
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--line);
 }
@@ -65,6 +49,8 @@ main {
   gap: 10px;
 }
 .site-header h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
   font-size: clamp(1.15rem, 3.5vw, 1.6rem);
   margin: 0;
   letter-spacing: -.01em;
@@ -76,26 +62,32 @@ main {
   gap: 12px;
   flex-wrap: wrap;
 }
-.last-updated { color: var(--ink-soft); font-size: .85rem; }
+.last-updated {
+  color: var(--ink-soft);
+  font-size: .85rem;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
 .race-link {
   display: inline-flex;
   align-items: center;
   font-size: .82rem;
   font-weight: 600;
-  color: var(--c-david);
-  background: #eef2ff;
+  color: var(--teal);
+  background: var(--navy-700);
+  border: 1px solid var(--line);
   padding: 5px 10px;
   border-radius: 999px;
   text-decoration: none;
 }
-.race-link:hover { background: #e1e9ff; }
+.race-link:hover { background: var(--navy-800); border-color: var(--teal-dim); }
 .refresh-indicator {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: .8rem;
   color: var(--ink-soft);
-  background: #eef2ff;
+  background: var(--navy-700);
   padding: 3px 9px;
   border-radius: 999px;
 }
@@ -109,7 +101,7 @@ main {
 .spinner {
   width: 15px; height: 15px;
   border: 2px solid var(--line);
-  border-top-color: var(--c-david);
+  border-top-color: var(--teal);
   border-radius: 50%;
   animation: spin .7s linear infinite;
   display: inline-block;
@@ -120,22 +112,25 @@ main {
   max-width: 1040px;
   margin: 0 auto;
   padding: 8px 16px 12px;
-  color: #92400e;
+  color: var(--gold);
   font-size: .85rem;
 }
 .error-banner::before { content: "⚠ "; }
 
 /* ---------- Panels ---------- */
 .panel {
-  background: var(--panel);
+  min-width: 0;
+  background: var(--navy-800);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 18px;
 }
 .panel h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
   margin: 0 0 14px;
-  font-size: 1.05rem;
+  font-size: 1.12rem;
   letter-spacing: -.01em;
 }
 .section-head {
@@ -150,7 +145,7 @@ main {
 .small { font-size: .82rem; }
 
 /* ---------- Latest hand ---------- */
-.latest-hand { border-left: 4px solid var(--c-david); }
+.latest-hand { border-left: 4px solid var(--gold); }
 .latest-hand-body { display: grid; gap: 12px; }
 .lh-top {
   display: flex;
@@ -159,16 +154,21 @@ main {
   gap: 10px 18px;
 }
 .lh-hand-no {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: clamp(1.4rem, 5vw, 2rem);
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -.02em;
 }
 .lh-contract {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 4px 12px;
   border-radius: 10px;
-  background: #f1f5ff;
+  background: var(--navy-700);
+  color: var(--ink);
 }
 .lh-suit-red { color: var(--bad); }
 .lh-result-made { color: var(--good); font-weight: 700; }
@@ -179,13 +179,19 @@ main {
   gap: 10px;
 }
 .lh-cell {
-  background: #fafbff;
+  background: var(--navy-700);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 12px;
 }
 .lh-cell .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-.lh-cell .v { font-size: 1.05rem; font-weight: 600; margin-top: 2px; }
+.lh-cell .v { font-size: 1.02rem; font-weight: 600; margin-top: 2px; }
+/* Cells 2-4 are numeric (tricks, and the two point totals); cell 1 is the
+   declaring side's names and stays in the body face. */
+.lh-cell:not(:first-child) .v {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---------- Player cards ---------- */
 .player-cards {
@@ -200,7 +206,7 @@ main {
   border-top: 4px solid var(--pc, var(--muted));
   border-radius: 12px;
   padding: 14px;
-  background: var(--panel);
+  background: var(--navy-700);
   overflow: hidden;
 }
 .pcard .name {
@@ -209,8 +215,10 @@ main {
 }
 .pcard .name .swatch { width: 12px; height: 12px; border-radius: 50%; background: var(--pc); }
 .pcard .big {
+  font-family: var(--font-display);
   font-size: clamp(1.8rem, 7vw, 2.4rem);
-  font-weight: 800;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -.02em;
   margin: 6px 0 2px;
   color: var(--pc);
@@ -220,7 +228,7 @@ main {
 .pcard.leader { box-shadow: 0 0 0 2px var(--pc) inset, var(--shadow); }
 
 /* ---------- Standings table ---------- */
-.table-wrap { overflow-x: auto; }
+.table-wrap { overflow-x: auto; min-width: 0; }
 table.standings {
   width: 100%;
   border-collapse: collapse;
@@ -232,7 +240,11 @@ table.standings th, table.standings td {
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
 }
-table.standings th.num, table.standings td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.standings th.num, table.standings td.num { text-align: right; }
+table.standings td.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
 table.standings th.sortable { cursor: pointer; user-select: none; color: var(--ink-soft); }
 table.standings th.sortable:hover { color: var(--ink); }
 table.standings th.active { color: var(--ink); font-weight: 700; }
@@ -259,9 +271,10 @@ table.standings tr .player-cell { font-weight: 600; }
   border-radius: 999px;
   padding: 6px 12px;
   font-size: .9rem;
+  background: var(--navy-700);
 }
 .mini-pill .swatch { width: 10px; height: 10px; border-radius: 50%; }
-.mini-pill b { font-variant-numeric: tabular-nums; }
+.mini-pill b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
 /* ---------- Footer ---------- */
 .site-footer {
@@ -276,7 +289,7 @@ table.standings tr .player-cell { font-weight: 600; }
 .btn {
   appearance: none;
   border: 1px solid var(--line);
-  background: var(--panel);
+  background: var(--navy-700);
   color: var(--ink);
   font: inherit;
   font-weight: 600;
@@ -286,9 +299,9 @@ table.standings tr .player-cell { font-weight: 600; }
   text-decoration: none;
   box-shadow: var(--shadow);
 }
-.btn:hover { border-color: #cfd4e0; }
-.btn-primary { background: var(--c-david); color: #fff; border-color: var(--c-david); }
-.btn-primary:hover { filter: brightness(1.05); }
+.btn:hover { border-color: var(--teal-dim); background: var(--navy-800); }
+.btn-primary { background: var(--gold); color: var(--navy-900); border-color: var(--gold); }
+.btn-primary:hover { filter: brightness(1.08); border-color: var(--gold); }
 .footer-note { flex-basis: 100%; margin: 4px 0 0; }
 
 @media (max-width: 560px) {
