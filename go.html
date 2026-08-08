@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bridge Friends</title>
+  <meta name="description" content="Add a hand, or see the scores." />
+
+  <!-- Shows a proper card when the link is pasted into WhatsApp/iMessage. -->
+  <meta property="og:title" content="Bridge Friends" />
+  <meta property="og:description" content="Add a hand, or see the scores." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=Spectral:wght@400;600&amp;display=swap" />
+  <!-- Same tokens as both other pages: one palette, one set of fonts. -->
+  <link rel="stylesheet" href="tokens.css?v=20260808f" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: var(--navy-900);
+      color: var(--ink);
+      font-family: var(--font-body);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Centred column, comfortably thumb-reachable on a phone. */
+    .wrap {
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 28px;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 32px 20px 40px;
+      text-align: center;
+    }
+    h1 {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: clamp(2rem, 9vw, 2.8rem);
+      letter-spacing: -.02em;
+      margin: 0;
+      text-wrap: balance;
+    }
+    .tagline { margin: 8px 0 0; color: var(--ink-soft); font-size: 1.02rem; }
+    .suits { font-size: 1.3rem; letter-spacing: .28em; color: var(--gold); margin-bottom: 4px; }
+    .suits .red { color: var(--bad); }
+
+    .actions { display: grid; gap: 14px; width: 100%; }
+    .action {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 18px 22px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--navy-800);
+      box-shadow: var(--shadow);
+      text-decoration: none;
+      color: var(--ink);
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .action .label {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.25rem;
+      letter-spacing: -.01em;
+    }
+    .action .hint { font-size: .88rem; color: var(--ink-soft); }
+    .action:hover, .action:focus-visible { transform: translateY(-2px); background: var(--navy-700); }
+    .action:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+
+    /* Primary = the thing you do most often: log a hand you just played. */
+    .action.primary {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--navy-900);
+    }
+    .action.primary .hint { color: var(--navy-900); opacity: .78; }
+    .action.primary:hover, .action.primary:focus-visible { background: var(--gold); filter: brightness(1.07); }
+
+    .action.secondary { border-color: var(--teal-dim); }
+    .action.secondary:hover, .action.secondary:focus-visible { border-color: var(--teal); }
+
+    .foot { color: var(--muted); font-size: .82rem; margin: 0; }
+    .foot a { color: var(--teal); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .action { transition: none; }
+      .action:hover, .action:focus-visible { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div>
+      <div class="suits" aria-hidden="true">♠<span class="red">♥</span><span class="red">♦</span>♣</div>
+      <h1>Bridge Friends</h1>
+      <p class="tagline">David · Vivienne · Hamish · Caroline</p>
+    </div>
+
+    <nav class="actions" aria-label="Where would you like to go?">
+      <a class="action primary" href="https://forms.gle/HMdEQjdAaiHqsCbL9" target="_blank" rel="noopener">
+        <span class="label">+ Add a hand</span>
+        <span class="hint">Log the hand you just played</span>
+      </a>
+      <a class="action secondary" href="index.html">
+        <span class="label">See the scores</span>
+        <span class="hint">Live dashboard, standings and the race to 50,000</span>
+      </a>
+    </nav>
+
+    <p class="foot">
+      Scores update themselves within a minute of a hand being added.
+      <br />Bookmark this page — it is the only link you need.
+    </p>
+  </main>
+</body>
+</html>
