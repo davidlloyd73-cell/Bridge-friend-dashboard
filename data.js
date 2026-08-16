@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808f";
+import { CONFIG } from "./config.js?v=20260816a";
 
 // ---- Fixed players & their signature colours (hex must match tokens.css) ----
 // These are the same five values as --c-david … --c-unknown in tokens.css.
@@ -183,6 +183,13 @@ export async function fetchRows() {
  * Turn the raw value rows into a structured model with all computed stats.
  * `rows` includes the header row at index 0.
  */
+/** Order hands by hand number, falling back to first-seen timestamp. */
+function compareHands(a, b) {
+  const an = parseInt(a.handNo, 10), bn = parseInt(b.handNo, 10);
+  if (Number.isFinite(an) && Number.isFinite(bn) && an !== bn) return an - bn;
+  return a.firstTsMs - b.firstTsMs;
+}
+
 export function buildModel(rows) {
   // Drop the header row; ignore fully-empty rows.
   const dataRows = rows.slice(1).filter((r) => r && r.length && String(r[COL.PLAYER] ?? "").trim() !== "");
@@ -200,6 +207,10 @@ export function buildModel(rows) {
       hand: String(r[COL.HAND] ?? "").trim(),
       player: normPlayer(r[COL.PLAYER]),
       hcp: num(r[COL.HCP]),
+      // Distinguish "logged 0 HCP" (legitimate — a yarborough) from "never
+      // logged". num() turns a blank cell into 0, which would otherwise sink
+      // the player's minimum to a 0 they never actually held.
+      hasHcp: String(r[COL.HCP] ?? "").trim() !== "",
       wonAuction: /^y/i.test(String(r[COL.WON_AUCTION] ?? "").trim()),
       declarer: normPlayer(r[COL.DECLARER]),
       declarerRaw: String(r[COL.DECLARER] ?? "").trim(),
@@ -232,13 +243,38 @@ export function buildModel(rows) {
     if (rec.inRound) { roundTotal[rec.player] += rec.score; hcpRound[rec.player] += rec.hcp; }
   });
 
+  // ---- Per-player HCP distribution (all-time, "ongoing") ------------------
+  // A deck holds 40 HCP shared four ways, so over enough hands every player's
+  // average should converge on 10. Rows where HCP was never logged are skipped
+  // entirely rather than counted as a zero.
+  const hcpStats = {};
+  PLAYERS.forEach((p) => {
+    hcpStats[p] = { sum: 0, hands: 0, avg: 0, max: null, min: null, maxAt: "", minAt: "" };
+  });
+
+  records.forEach((rec) => {
+    if (!(rec.player in hcpStats) || !rec.hasHcp) return;
+    const st = hcpStats[rec.player];
+    st.sum += rec.hcp;
+    st.hands += 1;
+    const at = `hand ${rec.hand || "?"}, ${fmtDate(rec.date)}`;
+    if (st.max === null || rec.hcp > st.max) { st.max = rec.hcp; st.maxAt = at; }
+    if (st.min === null || rec.hcp < st.min) { st.min = rec.hcp; st.minAt = at; }
+  });
+  PLAYERS.forEach((p) => {
+    const st = hcpStats[p];
+    st.avg = st.hands > 0 ? st.sum / st.hands : 0;
+  });
+
   // efficiency  = points won per high-card point held (rounded, as before)
-  // hcpPerHand  = the average strength of the hands you were dealt
+  // hcpPerHand  = the average strength of the hands you were dealt. Taken from
+  //   hcpStats so the Efficiency panel and the HCP panel can never disagree:
+  //   both divide by hands whose HCP was actually recorded, not by every row.
   const efficiency = {}, efficiencyRound = {}, hcpPerHand = {};
   PLAYERS.forEach((p) => {
     efficiency[p] = hcpTotal[p] > 0 ? Math.round(grand[p] / hcpTotal[p]) : 0;
     efficiencyRound[p] = hcpRound[p] > 0 ? Math.round(roundTotal[p] / hcpRound[p]) : 0;
-    hcpPerHand[p] = handsPlayed[p] > 0 ? hcpTotal[p] / handsPlayed[p] : 0;
+    hcpPerHand[p] = hcpStats[p].avg;
   });
 
   // ---- Sessions: group by calendar day, ordered ascending by real date ----
@@ -303,6 +339,7 @@ export function buildModel(rows) {
   // Hand-by-hand breakdown for the latest session: group that session's rows by
   // hand number, summarise each, and order by hand number (then timestamp).
   let latestSessionHands = [];
+  let latestSessionHcp = [];
   if (latestRec) {
     const sessRows = records.filter((r) => r.sessionKey === latestSessionKey);
     const byHand = new Map();
@@ -310,24 +347,47 @@ export function buildModel(rows) {
       if (!byHand.has(r.hand)) byHand.set(r.hand, []);
       byHand.get(r.hand).push(r);
     });
+
     latestSessionHands = [...byHand.values()]
       .map((rows) => {
         const s = summariseHand(rows, rows[0]);
         s.firstTsMs = Math.min(...rows.map((x) => x.tsMs || Infinity));
         return s;
       })
-      .sort((a, b) => {
-        const an = parseInt(a.handNo, 10), bn = parseInt(b.handNo, 10);
-        if (Number.isFinite(an) && Number.isFinite(bn) && an !== bn) return an - bn;
-        return a.firstTsMs - b.firstTsMs;
-      });
+      .sort(compareHands);
+
+    // HCP grid for the same session: one row per hand, one column per player.
+    latestSessionHcp = [...byHand.entries()]
+      .map(([handNo, rows]) => {
+        const per = {};
+        PLAYERS.forEach((p) => (per[p] = null)); // null = not logged, distinct from 0
+        rows.forEach((r) => {
+          if (r.player in per && r.hasHcp) per[r.player] = r.hcp;
+        });
+        const logged = PLAYERS.map((p) => per[p]).filter((v) => v !== null);
+        return {
+          handNo,
+          per,
+          total: logged.reduce((a, b) => a + b, 0),
+          complete: logged.length === PLAYERS.length,
+          firstTsMs: Math.min(...rows.map((x) => x.tsMs || Infinity)),
+        };
+      })
+      .sort(compareHands);
   }
+
+  // Latest-session average, shown beside the ongoing figure for comparison.
+  const hcpSessionAvg = {};
+  PLAYERS.forEach((p) => {
+    const vals = latestSessionHcp.map((h) => h.per[p]).filter((v) => v !== null);
+    hcpSessionAvg[p] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  });
 
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
-    handsPlayed, hcpPerHand,
+    handsPlayed, hcpPerHand, hcpStats, hcpSessionAvg,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
-    latestHand, latestSession, latestSessionHands,
+    latestHand, latestSession, latestSessionHands, latestSessionHcp,
     rowCount: records.length,
     newestTsMs: latestRec ? latestRec.tsMs : 0,
     fetchedAt: new Date(),

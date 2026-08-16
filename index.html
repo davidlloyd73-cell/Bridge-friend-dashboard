@@ -10,7 +10,7 @@
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20260808f" />
+  <link rel="stylesheet" href="styles.css?v=20260816a" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -61,6 +61,28 @@
           <tbody id="session-hands-body"></tbody>
         </table>
         <p class="muted small">Newest hand first. Contract marks: * Doubled, ** Redoubled. Points = the declaring side's per-player score for that hand.</p>
+      </div>
+    </section>
+
+    <!-- HIGH CARD POINTS -->
+    <section class="panel" aria-labelledby="hcp-title">
+      <div class="section-head">
+        <h2 id="hcp-title">High card points</h2>
+        <span class="muted small" id="hcp-meta"></span>
+      </div>
+      <div class="table-wrap">
+        <table class="standings hcp-table" id="hcp-table">
+          <thead>
+            <tr id="hcp-head-row"></tr>
+          </thead>
+          <tbody id="hcp-body"></tbody>
+          <tfoot id="hcp-foot"></tfoot>
+        </table>
+        <p class="muted small">HCP dealt to each player, hand by hand, for the latest
+          session. Average, highest and lowest are ongoing across every session on
+          record. One deck holds 40 HCP, so each hand should total 40 and a fair deal
+          averages 10 per player over time — ⚠ marks a hand whose four entries don't
+          add up. A · means that player's HCP wasn't logged for the hand.</p>
       </div>
     </section>
 
@@ -181,6 +203,6 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script type="module" src="app.js?v=20260808f"></script>
+  <script type="module" src="app.js?v=20260816a"></script>
 </body>
 </html>

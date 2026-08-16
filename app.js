@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260808f";
+import { CONFIG } from "./config.js?v=20260816a";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260808f";
+} from "./data.js?v=20260816a";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -269,6 +269,99 @@ function renderRoundTable(m) {
   });
 }
 
+/** One decimal place, or an em-dash when there's nothing to average. */
+function fmtAvg(n) {
+  return n === null || n === undefined ? "—" : n.toFixed(1);
+}
+
+/**
+ * High card points hand by hand for the latest session, with each player's
+ * ongoing average, highest and lowest underneath. The four columns of any one
+ * hand come from a single deck, so they must total 40 — which makes the Total
+ * column a live check on the data as well as a stat.
+ */
+function renderHcp(m) {
+  const headRow = $("#hcp-head-row");
+  const body = $("#hcp-body");
+  const foot = $("#hcp-foot");
+  const meta = $("#hcp-meta");
+  if (!headRow) return;
+  const cols = PLAYERS.length + 2; // Hand + players + Total
+
+  headRow.innerHTML =
+    `<th class="num">Hand</th>` +
+    PLAYERS.map((p) => `<th class="num"><span class="swatch" style="background:${COLORS[p]}"></span>${escapeHtml(p)}</th>`).join("") +
+    `<th class="num">Total</th>`;
+
+  const hands = m.latestSessionHcp || [];
+  meta.textContent = m.latestSession
+    ? `${m.latestSession.label} · ${hands.length} hand${hands.length === 1 ? "" : "s"}`
+    : "";
+
+  if (!hands.length) {
+    body.innerHTML = `<tr><td colspan="${cols}" class="muted">No hands recorded yet.</td></tr>`;
+    foot.innerHTML = "";
+    return;
+  }
+
+  body.innerHTML = hands.map((h) => {
+    const cells = PLAYERS.map((p) => {
+      const v = h.per[p];
+      return v === null ? `<td class="num muted">·</td>` : `<td class="num">${v}</td>`;
+    }).join("");
+    const off = h.complete && h.total !== 40;
+    const totalCell = off
+      ? `<td class="num hcp-off" title="Four hands from one deck should total 40 HCP — check this hand's entries">${h.total} ⚠</td>`
+      : `<td class="num${h.complete ? "" : " muted"}">${h.total}${h.complete ? "" : ` <span class="small">(partial)</span>`}</td>`;
+    return `<tr><td class="num">${escapeHtml(h.handNo)}</td>${cells}${totalCell}</tr>`;
+  }).join("");
+
+  // The four averages come from one deck too, so they also sum to ~40. Summing
+  // highest or lowest would be meaningless, so that cell stays blank.
+  const sumOf = (vals) => {
+    const nums = vals.filter((v) => typeof v === "number");
+    return nums.length === PLAYERS.length ? fmtAvg(nums.reduce((a, b) => a + b, 0)) : "";
+  };
+
+  const footRows = [
+    {
+      label: "This session avg",
+      value: (p) => m.hcpSessionAvg[p],
+      show: (p) => fmtAvg(m.hcpSessionAvg[p]),
+      title: () => "",
+      totals: true,
+    },
+    {
+      label: "Ongoing avg",
+      value: (p) => (m.hcpStats[p].hands ? m.hcpStats[p].avg : null),
+      show: (p) => fmtAvg(m.hcpStats[p].hands ? m.hcpStats[p].avg : null),
+      title: (p) => `${m.hcpStats[p].hands} hands recorded`,
+      totals: true,
+      strong: true,
+    },
+    {
+      label: "Highest",
+      show: (p) => (m.hcpStats[p].max === null ? "—" : m.hcpStats[p].max),
+      title: (p) => m.hcpStats[p].maxAt,
+    },
+    {
+      label: "Lowest",
+      show: (p) => (m.hcpStats[p].min === null ? "—" : m.hcpStats[p].min),
+      title: (p) => m.hcpStats[p].minAt,
+    },
+  ];
+
+  foot.innerHTML = footRows.map((spec) => `
+    <tr class="${spec.strong ? "hcp-strong" : ""}">
+      <th scope="row">${spec.label}</th>
+      ${PLAYERS.map((p) => {
+        const t = spec.title(p);
+        return `<td class="num"${t ? ` title="${escapeHtml(t)}"` : ""}>${spec.show(p)}</td>`;
+      }).join("")}
+      <td class="num muted">${spec.totals ? sumOf(PLAYERS.map(spec.value)) : ""}</td>
+    </tr>`).join("");
+}
+
 /**
  * All-time efficiency: how many points each player won per high-card point they
  * were dealt, alongside the raw HCP those points came from. Ranked by
@@ -509,6 +602,7 @@ function renderRoundLabels() {
 function renderAll(m) {
   renderLatestHand(m);
   renderThisSession(m);
+  renderHcp(m);
   renderRoundCards(m);
   renderRoundTable(m);
   renderPlayerCards(m);
@@ -665,4 +759,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260808f";
+export { buildModel, parseUKDate } from "./data.js?v=20260816a";
