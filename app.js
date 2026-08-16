@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260816c";
+import { CONFIG } from "./config.js?v=20260816d";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260816c";
+} from "./data.js?v=20260816d";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -764,12 +764,15 @@ async function refresh({ manual = false } = {}) {
     // Polite exponential backoff, capped at ~10 minutes.
     const backoffMs = Math.min(CONFIG.REFRESH_MS * Math.pow(2, consecutiveErrors), 10 * 60 * 1000);
     backoffUntil = Date.now() + backoffMs;
+    const retryIn = Math.round(backoffMs / 1000);
     const note = lastGoodModel
-      ? "Couldn't reach the sheet, retrying… (showing last good data)"
-      : `Couldn't load the sheet: ${err.message}`;
+      ? `Couldn't reach the sheet, retrying in ${retryIn}s… (showing last good data)`
+      : `Couldn't load the sheet: ${err.message} Retrying in ${retryIn}s.`;
     setError(note);
+    // Never leave the header reading "Loading…" once we know it isn't loading.
+    if (!lastGoodModel) $("#last-updated").textContent = "No data yet";
     // eslint-disable-next-line no-console
-    console.warn("[refresh]", err.message, "— next try in", Math.round(backoffMs / 1000), "s");
+    console.warn("[refresh]", err.message, "— next try in", retryIn, "s");
   } finally {
     setSpinner(false);
   }
@@ -835,4 +838,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260816c";
+export { buildModel, parseUKDate } from "./data.js?v=20260816d";

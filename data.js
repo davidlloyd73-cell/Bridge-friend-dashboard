@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260816c";
+import { CONFIG } from "./config.js?v=20260816d";
 
 // ---- Fixed players & their signature colours (hex must match tokens.css) ----
 // These are the same five values as --c-david … --c-unknown in tokens.css.
@@ -165,7 +165,31 @@ export async function fetchRows() {
   if (CONFIG.API_KEY === "PASTE_YOUR_API_KEY_HERE" || !CONFIG.API_KEY) {
     throw new Error("No API key set — edit config.js and paste your Google Sheets API key.");
   }
-  const res = await fetch(buildUrl(), { cache: "no-store" });
+
+  // Bound the wait. A hung request never rejects on its own, so without the
+  // abort the caller's catch never runs, no banner appears and the page sits on
+  // "Loading…" indefinitely. See CONFIG.FETCH_TIMEOUT_MS.
+  const timeoutMs = CONFIG.FETCH_TIMEOUT_MS || 15000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res;
+  try {
+    res = await fetch(buildUrl(), { cache: "no-store", signal: controller.signal });
+  } catch (err) {
+    // Distinguish "Google never answered" from "the network is down", because
+    // they need different responses from whoever is looking at the dashboard.
+    if (err && err.name === "AbortError") {
+      throw new Error(
+        `The sheet didn't respond within ${Math.round(timeoutMs / 1000)}s. ` +
+        `Google may be busy with it — this usually clears on its own.`
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+
   if (!res.ok) {
     let detail = "";
     try { detail = (await res.json())?.error?.message || ""; } catch { /* ignore */ }

@@ -42,6 +42,17 @@ export const CONFIG = {
   // How often (milliseconds) to re-check the sheet for new hands. 60000 = 60s.
   REFRESH_MS: 60000,
 
+  // Give up on a request after this long (milliseconds) and report it.
+  //
+  // A stalled request is NOT an error: fetch() simply never settles, so without
+  // this the page waits forever showing "Loading…" and looks like it has
+  // crashed. Google can leave a spreadsheet unresponsive for minutes at a time
+  // (heavy edits, a big paste, or a blip at their end) while the rest of the
+  // Sheets API answers normally. Capping the wait turns that into a visible
+  // "couldn't reach the sheet, retrying" with the usual backoff behind it.
+  // A healthy read of the full sheet takes well under a second.
+  FETCH_TIMEOUT_MS: 15000,
+
   // Footer "Add a hand" button links here.
   FORM_URL: "https://forms.gle/CbhLPMDwWYKDZpAr8",
 
