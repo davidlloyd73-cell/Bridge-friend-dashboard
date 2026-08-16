@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20260816b");
+@import url("tokens.css?v=20260816c");
 
 /* =============================================================================
    styles.css — Bridge Friends Live Dashboard
@@ -285,8 +285,23 @@ table.standings th .swatch {
 .hcp-table tfoot tr.hcp-rule td { border-top: 1px solid var(--line); }
 .hcp-table td.hcp-off { color: var(--gold); font-weight: 700; }
 /* One player submitted this hand number twice with different points. */
-.hcp-table td.hcp-clash { color: var(--gold); }
-.hcp-table .hcp-mark { font-size: .75em; vertical-align: super; margin-left: 1px; }
+.hcp-table td.hcp-clash,
+.audit-table td.hcp-clash { color: var(--gold); }
+.hcp-table .hcp-mark,
+.audit-table .hcp-mark { font-size: .75em; vertical-align: super; margin-left: 1px; }
+
+/* ---------- Sheet check ---------- */
+.audit-panel { border-left: 4px solid var(--gold-dim); }
+.audit-panel #audit-summary { margin: -6px 0 14px; }
+/* Long list: cap it so the panel can't dominate the page. */
+.audit-scroll { max-height: 26rem; overflow-y: auto; }
+.audit-table th { position: sticky; top: 0; background: var(--navy-800); z-index: 1; }
+.audit-table td.hcp-off { color: var(--gold); font-weight: 700; }
+.audit-table .audit-date,
+.audit-table .audit-note { font-size: .84rem; }
+.audit-table .audit-note { white-space: normal; }
+/* The value an unlogged seat must have held — a suggestion, not data. */
+.audit-fill { color: var(--teal); font-style: italic; }
 
 /* ---------- Charts ---------- */
 .chart-box { position: relative; height: clamp(260px, 45vw, 420px); }

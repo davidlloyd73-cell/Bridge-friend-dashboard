@@ -10,7 +10,7 @@
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20260816b" />
+  <link rel="stylesheet" href="styles.css?v=20260816c" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -184,6 +184,30 @@
       </div>
     </section>
 
+    <!-- SHEET CHECK — hidden by app.js when there is nothing to fix -->
+    <section class="panel audit-panel" id="audit-section" aria-labelledby="audit-title" hidden>
+      <div class="section-head">
+        <h2 id="audit-title">Sheet check</h2>
+        <span class="muted small" id="audit-meta"></span>
+      </div>
+      <p class="muted small" id="audit-summary"></p>
+      <div class="table-wrap audit-scroll">
+        <table class="standings audit-table" id="audit-table">
+          <thead>
+            <tr id="audit-head-row"></tr>
+          </thead>
+          <tbody id="audit-body"></tbody>
+        </table>
+      </div>
+      <p class="muted small">Every hand on record whose high card points don't add up.
+        A deck holds 40, so four logged seats must total 40 — where they don't, one of
+        the four is mistyped and only you can say which. Where exactly one seat is
+        blank the deck settles it, and the value it must have held is shown as
+        <span class="audit-fill">n?</span> — a suggestion for the sheet, never counted
+        in any total or average on this page. Fix them in the Form responses tab and
+        they'll drop off this list on the next refresh.</p>
+    </section>
+
     <!-- ALL-TIME RACE -->
     <section class="panel" aria-labelledby="race-title">
       <h2 id="race-title">Cumulative score race <span class="muted small">(all-time)</span></h2>
@@ -207,6 +231,6 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script type="module" src="app.js?v=20260816b"></script>
+  <script type="module" src="app.js?v=20260816c"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260816b";
+import { CONFIG } from "./config.js?v=20260816c";
 
 // ---- Fixed players & their signature colours (hex must match tokens.css) ----
 // These are the same five values as --c-david … --c-unknown in tokens.css.
@@ -467,14 +467,52 @@ export function buildModel(rows) {
     latestSessionKey ? handHcp.filter((h) => h.sessionKey === latestSessionKey) : []
   );
 
-  // Every hand where one player submitted twice under the same hand number.
-  const hcpClashes = handHcp
-    .filter((h) => h.clashes.length)
-    .map((h) => ({ handNo: h.handNo, date: h.date, label: fmtDate(h.date), players: h.clashes }));
+  // ---- Sheet audit: every hand in the record that doesn't look right -------
+  // Three faults, all fixable in the Google Sheet:
+  //   offTotal   — four seats logged but they don't sum to 40, so at least one
+  //                number is wrong and we can't tell which.
+  //   missingOne — exactly one seat unlogged. That one IS recoverable: the deck
+  //                forces it to 40 minus the other three. Reported as a
+  //                suggestion only — never fed back into the stats, which stay
+  //                strictly what was actually logged.
+  //   clashes    — one player submitted the same hand number twice.
+  const audited = handHcp.map((h) => {
+    const logged = PLAYERS.filter((p) => h.per[p] !== undefined);
+    const total = logged.reduce((s, p) => s + h.per[p], 0);
+    const missing = PLAYERS.filter((p) => h.per[p] === undefined);
+    const inferred = DECK_HCP - total;
+    return {
+      handNo: h.handNo,
+      date: h.date,
+      label: fmtDate(h.date),
+      per: h.per,
+      clashes: h.clashes,
+      total,
+      loggedCount: logged.length,
+      complete: logged.length === PLAYERS.length,
+      missingPlayer: missing.length === 1 ? missing[0] : null,
+      // Only offer a value that could actually be a bridge hand.
+      inferred: missing.length === 1 && inferred >= 0 && inferred <= 37 ? inferred : null,
+    };
+  });
+
+  const newestFirst = (a, b) => (b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0);
+  const hcpAudit = {
+    offTotal: audited.filter((h) => h.complete && h.total !== DECK_HCP).sort(newestFirst),
+    missingOne: audited.filter((h) => h.loggedCount === PLAYERS.length - 1).sort(newestFirst),
+    missingMore: audited.filter((h) => h.loggedCount < PLAYERS.length - 1).sort(newestFirst),
+    clashes: audited.filter((h) => h.clashes.length).sort(newestFirst),
+    handsChecked: audited.length,
+  };
+
+  // Kept for callers that only want the clash list.
+  const hcpClashes = hcpAudit.clashes.map((h) => ({
+    handNo: h.handNo, date: h.date, label: h.label, players: h.clashes,
+  }));
 
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
-    handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes,
+    handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,
     rowCount: records.length,

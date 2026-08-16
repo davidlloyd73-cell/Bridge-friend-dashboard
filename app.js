@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260816b";
+import { CONFIG } from "./config.js?v=20260816c";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260816b";
+} from "./data.js?v=20260816c";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -370,6 +370,74 @@ function renderHcp(m) {
 }
 
 /**
+ * Every hand in the whole record that doesn't look right, so the sheet can be
+ * corrected in one pass. Hidden entirely when there's nothing to fix.
+ */
+function renderAudit(m) {
+  const section = $("#audit-section");
+  if (!section) return;
+  const a = m.hcpAudit;
+  const issues = a.offTotal.length + a.missingOne.length + a.missingMore.length;
+
+  if (!issues) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
+  $("#audit-head-row").innerHTML =
+    `<th class="num">Hand</th><th>Date</th>` +
+    PLAYERS.map((p) => `<th class="num"><span class="swatch" style="background:${COLORS[p]}"></span>${escapeHtml(p)}</th>`).join("") +
+    `<th class="num">Total</th><th>What's wrong</th>`;
+
+  $("#audit-meta").textContent =
+    `${issues} of ${a.handsChecked} hands · checked all sessions`;
+
+  const bits = [];
+  if (a.offTotal.length) bits.push(`<b>${a.offTotal.length}</b> don't total 40`);
+  if (a.missingOne.length) bits.push(`<b>${a.missingOne.length}</b> missing one entry`);
+  if (a.missingMore.length) bits.push(`<b>${a.missingMore.length}</b> missing several`);
+  if (a.clashes.length) bits.push(`<b>${a.clashes.length}</b> duplicate hand numbers`);
+  $("#audit-summary").innerHTML = bits.join(" · ");
+
+  // One list, newest first, so a session's problems sit together.
+  const rows = [...a.offTotal, ...a.missingOne, ...a.missingMore]
+    .sort((x, y) => (y.date ? y.date.getTime() : 0) - (x.date ? x.date.getTime() : 0));
+
+  $("#audit-body").innerHTML = rows.map((h) => {
+    const cells = PLAYERS.map((p) => {
+      const v = h.per[p];
+      if (v !== undefined) {
+        const clash = h.clashes.includes(p);
+        return `<td class="num${clash ? " hcp-clash" : ""}">${v}${clash ? '<span class="hcp-mark">+</span>' : ""}</td>`;
+      }
+      // Suggested value for the empty seat — shown, never counted.
+      return h.inferred !== null && h.missingPlayer === p
+        ? `<td class="num audit-fill" title="Not logged. The other three total ${h.total}, so this seat must have held ${h.inferred}.">${h.inferred}?</td>`
+        : `<td class="num muted">·</td>`;
+    }).join("");
+
+    const diff = h.total - 40;
+    const verdict = h.complete
+      ? `<td class="num hcp-off">${h.total} <span class="small">(${diff > 0 ? "+" : ""}${diff})</span></td>`
+      : `<td class="num muted">${h.total}</td>`;
+
+    const note = h.complete
+      ? "One of these four is wrong"
+      : h.inferred !== null
+        ? `${escapeHtml(h.missingPlayer)} not logged — must be ${h.inferred}`
+        : `${PLAYERS.length - h.loggedCount} not logged`;
+
+    return `<tr>
+      <td class="num">${escapeHtml(h.handNo)}</td>
+      <td class="audit-date">${escapeHtml(h.label)}</td>
+      ${cells}${verdict}
+      <td class="audit-note muted">${note}</td>
+    </tr>`;
+  }).join("");
+}
+
+/**
  * All-time efficiency: how many points each player won per high-card point they
  * were dealt, alongside the raw HCP those points came from. Ranked by
  * efficiency — the whole point of the panel — so it is not sortable.
@@ -610,6 +678,7 @@ function renderAll(m) {
   renderLatestHand(m);
   renderThisSession(m);
   renderHcp(m);
+  renderAudit(m);
   renderRoundCards(m);
   renderRoundTable(m);
   renderPlayerCards(m);
@@ -766,4 +835,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260816b";
+export { buildModel, parseUKDate } from "./data.js?v=20260816c";
