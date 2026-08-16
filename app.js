@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260816a";
+import { CONFIG } from "./config.js?v=20260816b";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260816a";
+} from "./data.js?v=20260816b";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -307,7 +307,13 @@ function renderHcp(m) {
   body.innerHTML = hands.map((h) => {
     const cells = PLAYERS.map((p) => {
       const v = h.per[p];
-      return v === null ? `<td class="num muted">·</td>` : `<td class="num">${v}</td>`;
+      if (v === null) return `<td class="num muted">·</td>`;
+      // Two submissions from one player on this hand number. data.js keeps
+      // whichever makes the hand total 40; say so rather than hiding the clash.
+      const clash = (h.clashes || []).includes(p);
+      return clash
+        ? `<td class="num hcp-clash" title="${escapeHtml(p)} submitted this hand number twice with different points. The value shown is the one that makes the hand total 40 — worth correcting in the sheet.">${v}<span class="hcp-mark">+</span></td>`
+        : `<td class="num">${v}</td>`;
     }).join("");
     const off = h.complete && h.total !== 40;
     const totalCell = off
@@ -323,36 +329,37 @@ function renderHcp(m) {
     return nums.length === PLAYERS.length ? fmtAvg(nums.reduce((a, b) => a + b, 0)) : "";
   };
 
-  const footRows = [
+  // Two blocks of the same three statistics: this session, then all sessions.
+  // Averages carry a row total (the four come from one deck, so they sum to
+  // ~40); summing highest or lowest would be meaningless, so those stay blank.
+  const block = (stats, scope, showHands) => [
     {
-      label: "This session avg",
-      value: (p) => m.hcpSessionAvg[p],
-      show: (p) => fmtAvg(m.hcpSessionAvg[p]),
-      title: () => "",
+      label: `${scope} avg`,
+      value: (p) => (stats[p].hands ? stats[p].avg : null),
+      show: (p) => fmtAvg(stats[p].hands ? stats[p].avg : null),
+      title: (p) => (showHands ? `${stats[p].hands} hands recorded` : ""),
       totals: true,
+      strong: showHands,
     },
     {
-      label: "Ongoing avg",
-      value: (p) => (m.hcpStats[p].hands ? m.hcpStats[p].avg : null),
-      show: (p) => fmtAvg(m.hcpStats[p].hands ? m.hcpStats[p].avg : null),
-      title: (p) => `${m.hcpStats[p].hands} hands recorded`,
-      totals: true,
-      strong: true,
+      label: `${scope} highest`,
+      show: (p) => (stats[p].max === null ? "—" : stats[p].max),
+      title: (p) => stats[p].maxAt,
     },
     {
-      label: "Highest",
-      show: (p) => (m.hcpStats[p].max === null ? "—" : m.hcpStats[p].max),
-      title: (p) => m.hcpStats[p].maxAt,
-    },
-    {
-      label: "Lowest",
-      show: (p) => (m.hcpStats[p].min === null ? "—" : m.hcpStats[p].min),
-      title: (p) => m.hcpStats[p].minAt,
+      label: `${scope} lowest`,
+      show: (p) => (stats[p].min === null ? "—" : stats[p].min),
+      title: (p) => stats[p].minAt,
     },
   ];
 
+  const footRows = [
+    ...block(m.hcpSession, "This session", false),
+    ...block(m.hcpStats, "Ongoing", true).map((r, i) => (i === 0 ? { ...r, rule: true } : r)),
+  ];
+
   foot.innerHTML = footRows.map((spec) => `
-    <tr class="${spec.strong ? "hcp-strong" : ""}">
+    <tr class="${[spec.strong ? "hcp-strong" : "", spec.rule ? "hcp-rule" : ""].filter(Boolean).join(" ")}">
       <th scope="row">${spec.label}</th>
       ${PLAYERS.map((p) => {
         const t = spec.title(p);
@@ -759,4 +766,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260816a";
+export { buildModel, parseUKDate } from "./data.js?v=20260816b";

@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260816a";
+import { CONFIG } from "./config.js?v=20260816b";
 
 // ---- Fixed players & their signature colours (hex must match tokens.css) ----
 // These are the same five values as --c-david … --c-unknown in tokens.css.
@@ -183,6 +183,104 @@ export async function fetchRows() {
  * Turn the raw value rows into a structured model with all computed stats.
  * `rows` includes the header row at index 0.
  */
+/**
+ * Collapse records into one HCP entry per (session, hand, player).
+ *
+ * The Form has no way to stop the same player submitting a hand number twice,
+ * and it happens: ~29 times so far a player has two rows on one hand number
+ * carrying DIFFERENT HCP and scores, ten minutes apart — a mistyped hand
+ * number rather than a genuine re-submission. Left alone that player is
+ * counted twice for the hand, so their average is computed over more hands
+ * than were played.
+ *
+ * Which of the two is right is decided by the deck, not by a guess: one pack
+ * holds exactly 40 HCP, so where the other three seats are known there is only
+ * one value that can complete the hand. If exactly one candidate makes the hand
+ * total 40 it wins; otherwise the earliest submission is kept. Either way the
+ * clash is recorded so the table can flag it rather than quietly picking a side.
+ */
+const DECK_HCP = 40;
+
+function buildHandHcp(records) {
+  const byHand = new Map(); // `${sessionKey}|${hand}` -> hand entry
+  records.forEach((rec) => {
+    if (!rec.hasHcp || !PLAYERS.includes(rec.player)) return;
+    const key = `${rec.sessionKey}|${rec.hand}`;
+    if (!byHand.has(key)) {
+      byHand.set(key, {
+        key,
+        sessionKey: rec.sessionKey,
+        handNo: rec.hand,
+        date: rec.date,
+        cands: {},
+        clashes: [],
+        firstTsMs: rec.tsMs || Infinity,
+      });
+    }
+    const h = byHand.get(key);
+    h.firstTsMs = Math.min(h.firstTsMs, rec.tsMs || Infinity);
+    (h.cands[rec.player] ||= []).push({ hcp: rec.hcp, tsMs: rec.tsMs || Infinity });
+  });
+
+  return [...byHand.values()].map((h) => {
+    h.per = {};
+    // Seats with a single submission are settled; note the ones that aren't.
+    PLAYERS.forEach((p) => {
+      const c = h.cands[p];
+      if (!c) return;
+      if (c.length === 1) h.per[p] = c[0].hcp;
+      else h.clashes.push(p);
+    });
+
+    h.clashes.forEach((p) => {
+      const c = [...h.cands[p]].sort((a, b) => a.tsMs - b.tsMs);
+      // Only solvable when this is the one unsettled seat and the rest are in.
+      const settled = PLAYERS.filter((q) => h.per[q] !== undefined);
+      const needed = DECK_HCP - settled.reduce((sum, q) => sum + h.per[q], 0);
+      const fits = h.clashes.length === 1 && settled.length === PLAYERS.length - 1
+        ? c.filter((x) => x.hcp === needed)
+        : [];
+      h.per[p] = fits.length === 1 ? fits[0].hcp : c[0].hcp;
+      if (fits.length === 1) h.resolvedByDeck = true;
+    });
+
+    delete h.cands;
+    return h;
+  });
+}
+
+/**
+ * Per-player HCP summary over a list of hand entries: hands counted, average,
+ * highest and lowest, plus which hand each extreme came from. Driven by the
+ * deduplicated hands above, so the summary and the on-screen grid can never
+ * count a hand differently.
+ */
+function summariseHcp(handEntries) {
+  const out = {};
+  PLAYERS.forEach((p) => {
+    out[p] = { sum: 0, hands: 0, avg: 0, max: null, min: null, maxAt: "", minAt: "" };
+  });
+
+  handEntries.forEach((h) => {
+    PLAYERS.forEach((p) => {
+      const v = h.per[p];
+      if (v === undefined) return;
+      const st = out[p];
+      st.sum += v;
+      st.hands += 1;
+      const at = `hand ${h.handNo || "?"}, ${fmtDate(h.date)}`;
+      if (st.max === null || v > st.max) { st.max = v; st.maxAt = at; }
+      if (st.min === null || v < st.min) { st.min = v; st.minAt = at; }
+    });
+  });
+
+  PLAYERS.forEach((p) => {
+    const st = out[p];
+    st.avg = st.hands > 0 ? st.sum / st.hands : 0;
+  });
+  return out;
+}
+
 /** Order hands by hand number, falling back to first-seen timestamp. */
 function compareHands(a, b) {
   const an = parseInt(a.handNo, 10), bn = parseInt(b.handNo, 10);
@@ -243,28 +341,15 @@ export function buildModel(rows) {
     if (rec.inRound) { roundTotal[rec.player] += rec.score; hcpRound[rec.player] += rec.hcp; }
   });
 
-  // ---- Per-player HCP distribution (all-time, "ongoing") ------------------
+  // ---- Per-player HCP distribution ----------------------------------------
   // A deck holds 40 HCP shared four ways, so over enough hands every player's
   // average should converge on 10. Rows where HCP was never logged are skipped
   // entirely rather than counted as a zero.
-  const hcpStats = {};
-  PLAYERS.forEach((p) => {
-    hcpStats[p] = { sum: 0, hands: 0, avg: 0, max: null, min: null, maxAt: "", minAt: "" };
-  });
-
-  records.forEach((rec) => {
-    if (!(rec.player in hcpStats) || !rec.hasHcp) return;
-    const st = hcpStats[rec.player];
-    st.sum += rec.hcp;
-    st.hands += 1;
-    const at = `hand ${rec.hand || "?"}, ${fmtDate(rec.date)}`;
-    if (st.max === null || rec.hcp > st.max) { st.max = rec.hcp; st.maxAt = at; }
-    if (st.min === null || rec.hcp < st.min) { st.min = rec.hcp; st.minAt = at; }
-  });
-  PLAYERS.forEach((p) => {
-    const st = hcpStats[p];
-    st.avg = st.hands > 0 ? st.sum / st.hands : 0;
-  });
+  //
+  // Computed twice from the same function — once over every hand ("ongoing")
+  // and once over the latest session — so the two scopes can never drift apart.
+  const handHcp = buildHandHcp(records);
+  const hcpStats = summariseHcp(handHcp);
 
   // efficiency  = points won per high-card point held (rounded, as before)
   // hcpPerHand  = the average strength of the hands you were dealt. Taken from
@@ -356,36 +441,40 @@ export function buildModel(rows) {
       })
       .sort(compareHands);
 
-    // HCP grid for the same session: one row per hand, one column per player.
-    latestSessionHcp = [...byHand.entries()]
-      .map(([handNo, rows]) => {
+    // HCP grid for the same session, taken from the deduplicated hands so it
+    // shows exactly the values the summary rows are computed from.
+    latestSessionHcp = handHcp
+      .filter((h) => h.sessionKey === latestSessionKey)
+      .map((h) => {
         const per = {};
-        PLAYERS.forEach((p) => (per[p] = null)); // null = not logged, distinct from 0
-        rows.forEach((r) => {
-          if (r.player in per && r.hasHcp) per[r.player] = r.hcp;
-        });
+        PLAYERS.forEach((p) => (per[p] = h.per[p] === undefined ? null : h.per[p]));
         const logged = PLAYERS.map((p) => per[p]).filter((v) => v !== null);
         return {
-          handNo,
+          handNo: h.handNo,
           per,
+          clashes: h.clashes,
           total: logged.reduce((a, b) => a + b, 0),
           complete: logged.length === PLAYERS.length,
-          firstTsMs: Math.min(...rows.map((x) => x.tsMs || Infinity)),
+          firstTsMs: h.firstTsMs,
         };
       })
       .sort(compareHands);
   }
 
-  // Latest-session average, shown beside the ongoing figure for comparison.
-  const hcpSessionAvg = {};
-  PLAYERS.forEach((p) => {
-    const vals = latestSessionHcp.map((h) => h.per[p]).filter((v) => v !== null);
-    hcpSessionAvg[p] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-  });
+  // Same summary restricted to the latest session, shown alongside the ongoing
+  // figures so a good or bad night reads against the long-run baseline.
+  const hcpSession = summariseHcp(
+    latestSessionKey ? handHcp.filter((h) => h.sessionKey === latestSessionKey) : []
+  );
+
+  // Every hand where one player submitted twice under the same hand number.
+  const hcpClashes = handHcp
+    .filter((h) => h.clashes.length)
+    .map((h) => ({ handNo: h.handNo, date: h.date, label: fmtDate(h.date), players: h.clashes }));
 
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
-    handsPlayed, hcpPerHand, hcpStats, hcpSessionAvg,
+    handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,
     rowCount: records.length,

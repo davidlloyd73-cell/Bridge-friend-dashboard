@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20260816a");
+@import url("tokens.css?v=20260816b");
 
 /* =============================================================================
    styles.css — Bridge Friends Live Dashboard
@@ -280,7 +280,13 @@ table.standings th .swatch {
 }
 .hcp-table tfoot tr.hcp-strong th,
 .hcp-table tfoot tr.hcp-strong td { color: var(--ink); font-weight: 700; }
+/* Divides the "this session" block from the all-sessions block. */
+.hcp-table tfoot tr.hcp-rule th,
+.hcp-table tfoot tr.hcp-rule td { border-top: 1px solid var(--line); }
 .hcp-table td.hcp-off { color: var(--gold); font-weight: 700; }
+/* One player submitted this hand number twice with different points. */
+.hcp-table td.hcp-clash { color: var(--gold); }
+.hcp-table .hcp-mark { font-size: .75em; vertical-align: super; margin-left: 1px; }
 
 /* ---------- Charts ---------- */
 .chart-box { position: relative; height: clamp(260px, 45vw, 420px); }
