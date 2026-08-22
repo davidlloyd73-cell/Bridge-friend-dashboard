@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20260822b");
+@import url("tokens.css?v=20260822c");
 
 /* =============================================================================
    styles.css — Bridge Friends Live Dashboard
@@ -252,6 +252,14 @@ table.standings th.active[aria-sort="descending"]::after { content: " ▼"; font
 table.standings th.active[aria-sort="ascending"]::after  { content: " ▲"; font-size: .7em; }
 table.standings td .swatch { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:7px; vertical-align: middle; }
 table.standings tr .player-cell { font-weight: 600; }
+/* "→ David & Vivienne" after a hand's points, when the defenders took them.
+   Set in the body face, not the table's mono, so the number stays dominant. */
+.points-to {
+  font-family: var(--font-body, inherit);
+  font-size: .8rem;
+  color: var(--ink-soft);
+  margin-right: 8px;
+}
 
 /* ---------- High card points ---------- */
 /* The player columns are headed by name + swatch, so the swatch rule above

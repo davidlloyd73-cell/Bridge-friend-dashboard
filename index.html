@@ -10,7 +10,7 @@
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20260822b" />
+  <link rel="stylesheet" href="styles.css?v=20260822c" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -60,7 +60,10 @@
           </thead>
           <tbody id="session-hands-body"></tbody>
         </table>
-        <p class="muted small">Newest hand first. Contract marks: * Doubled, ** Redoubled. Points = the declaring side's per-player score for that hand.</p>
+        <p class="muted small">Newest hand first. Contract marks: * Doubled, ** Redoubled.
+          Points = what the hand paid, per player, to the side that won it: the
+          declaring pair named in the row unless the contract went down, in which
+          case the defenders who took the penalty are named after the arrow.</p>
       </div>
     </section>
 
@@ -233,6 +236,6 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script type="module" src="app.js?v=20260822b"></script>
+  <script type="module" src="app.js?v=20260822c"></script>
 </body>
 </html>
