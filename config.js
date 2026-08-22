@@ -76,4 +76,26 @@ export const CONFIG = {
     START: "10/07/2026",
     TARGET: 50000,
   },
+
+  // ---------------------------------------------------------------------------
+  // WHEN ONE SESSION ENDS AND THE NEXT BEGINS.
+  //
+  // A session is a night of bridge, not a calendar day. Play that carries on
+  // past midnight is still the same night, but the form's date rolls over — so
+  // without this the evening would be split into two sessions on the dashboard,
+  // and at 00:01 "This session" would reset to a single hand.
+  //
+  // NIGHT_ENDS_AT_HOUR is the hour (0-23, local time) at which a new session
+  // day starts. At 5, a hand logged at 01:30 on Sunday belongs to Saturday
+  // night's session; one logged at 05:30 starts Sunday's own session. Set it to
+  // 0 to go back to plain calendar days.
+  //
+  // Only the clock decides this, never the form's date box: a hand is moved
+  // back a day only when its submission time says it was played in the small
+  // hours AND the evening before actually has hands to join. Entering a hand
+  // the next afternoon still files it under the date you typed.
+  // ---------------------------------------------------------------------------
+  SESSION: {
+    NIGHT_ENDS_AT_HOUR: 5,
+  },
 };

@@ -4,11 +4,11 @@
 // always match the main dashboard's round-total column exactly.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260822a";
+import { CONFIG } from "./config.js?v=20260822b";
 import {
-  PLAYERS, COLORS, fmtNum, fmtDate, escapeHtml, fetchRows, buildModel, parseUKDate,
+  PLAYERS, COLORS, fmtNum, fmtDate, fmtClock, escapeHtml, fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260822a";
+} from "./data.js?v=20260822b";
 
 // Both the target and the round's name come from CONFIG.ROUND — see config.js.
 const TARGET = CONFIG.ROUND.TARGET;
@@ -150,9 +150,14 @@ function renderHeader(m) {
     const hands = m.latestSession && m.latestSession.key === m.latestRoundSession.key
       ? m.latestSessionHands.length
       : null;
+    // A session that ran past midnight is shown under the evening it started,
+    // so say when it finished rather than leaving the next date unaccounted for.
+    const lateFinish = m.latestRoundSession.ranPastMidnight
+      ? ` · ran to ${fmtClock(m.latestRoundSession.lastTsMs)} the next morning`
+      : "";
     meta.textContent = hands !== null
-      ? `Latest session: ${m.latestRoundSession.label} · ${hands} hand${hands === 1 ? "" : "s"} played`
-      : `Latest ${ROUND.LABEL} session: ${m.latestRoundSession.label}`;
+      ? `Latest session: ${m.latestRoundSession.label} · ${hands} hand${hands === 1 ? "" : "s"} played${lateFinish}`
+      : `Latest ${ROUND.LABEL} session: ${m.latestRoundSession.label}${lateFinish}`;
   } else {
     meta.textContent = `No ${ROUND.LABEL} sessions yet`;
   }

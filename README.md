@@ -107,7 +107,7 @@ Open that URL — the dashboard is live. 🎉
 | `styles.css` | Dashboard styling. Imports `tokens.css`; declares no colours of its own. |
 | `tokens.css` | **All design tokens** — the navy/teal/gold palette, player colours, shadow, radius and the three font stacks. Shared by both pages; edit a colour here and both follow. |
 | `app.js`     | Fetches the sheet, parses it defensively, computes all the stats, renders, and runs the 60-second polling loop. |
-| `config.js`  | **The file you edit.** API key, sheet ID, range, refresh interval, form link, and the current **round**. |
+| `config.js`  | **The file you edit.** API key, sheet ID, range, refresh interval, form link, the current **round**, and when one **night** of play ends. |
 | `data.js`    | Shared fetch/parse/compute — used by both `app.js` and `race.js` so the two pages can't disagree. |
 | `race.html` / `race.js` / `race.css` | The live "Race to 50,000" page. |
 | `README.md`  | This file. |
@@ -135,6 +135,49 @@ you can confirm the new start date took effect.
 (The `<h1>` and `<title>` on `race.html` still say "Race to 50,000" — if you ever
 change `TARGET`, edit those two lines by hand.)
 
+### 🌙 Sessions that run past midnight
+
+A session is a **night** of bridge, not a calendar day. When play carries on past
+midnight the form's date rolls over with the clock, which used to split one
+evening into two sessions — two rows on the standings, two points on the chart,
+and "This session" resetting to a single hand at 00:01.
+
+One value in `config.js` decides where one night ends and the next begins:
+
+```js
+SESSION: {
+  NIGHT_ENDS_AT_HOUR: 5,   // 0-23, local time
+},
+```
+
+At `5`, a hand logged at 01:30 on Sunday belongs to **Saturday** night's session;
+one logged at 05:30 starts Sunday's own session. Set it to `0` for plain calendar
+days (the old behaviour).
+
+A hand only moves back a day when **both** of these hold, so this can never
+quietly relabel something else:
+
+* its submission time (column A) says it was played in the small hours of the
+  very day the form's date box (column B) names — that agreement is exactly what
+  the midnight rollover looks like; **and**
+* the evening before actually has hands to join.
+
+So a hand typed in the next afternoon stays on the date you gave it, a hand
+played at 23:50 but submitted at 00:05 was never split in the first place, and a
+game that genuinely begins after midnight keeps its own date.
+
+The merged session is shown under the evening it **started**, with a note saying
+when it finished ("ran to 01:35 the next morning") so the second date isn't
+silently missing. The browser console's **"round scoping verification"** group
+lists every session that ran past midnight, the form dates it merged, and its
+last hand's time.
+
+One consequence worth knowing: a round boundary now cuts between whole nights.
+If `ROUND.START` is a Monday and you played Sunday evening into the small hours
+of Monday, those small-hours hands belong to Sunday's session and sit **outside**
+the round — where before they would have counted. The verification group flags it
+if the round's first session isn't the date you configured.
+
 ### ♻️ Cache-busting
 
 Both HTML files load their scripts with a `?v=` query, `app.js`/`race.js`/`data.js`
@@ -143,7 +186,7 @@ carry the **same** query on their `./data.js` and `./config.js` imports, and
 change anything, bump that value **everywhere** — each of those is a separate
 fetch, so bumping only the `<script>` tags would leave browsers running a cached
 `data.js` (where most of the logic lives) or a cached `tokens.css` (where every
-colour lives). Twelve places in total; grep for the current value to find them.
+colour lives). Thirteen places in total; grep for the current value to find them.
 
 ### Player colours
 David = **blue**, Vivienne = **green**, Hamish = **orange**, Caroline =
