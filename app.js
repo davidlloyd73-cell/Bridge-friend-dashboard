@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260816d";
+import { CONFIG } from "./config.js?v=20260822a";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260816d";
+} from "./data.js?v=20260822a";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -322,11 +322,13 @@ function renderHcp(m) {
     return `<tr><td class="num">${escapeHtml(h.handNo)}</td>${cells}${totalCell}</tr>`;
   }).join("");
 
-  // The four averages come from one deck too, so they also sum to ~40. Summing
-  // highest or lowest would be meaningless, so that cell stays blank.
-  const sumOf = (vals) => {
+  // Totals and averages both come from whole decks, so their Total column still
+  // means something (40 per hand, and ~40 respectively) — but each needs its own
+  // formatting. Summing a highest or a lowest would be meaningless, so those
+  // cells stay blank.
+  const sumOf = (vals, fmt = fmtAvg) => {
     const nums = vals.filter((v) => typeof v === "number");
-    return nums.length === PLAYERS.length ? fmtAvg(nums.reduce((a, b) => a + b, 0)) : "";
+    return nums.length === PLAYERS.length ? fmt(nums.reduce((a, b) => a + b, 0)) : "";
   };
 
   // Two blocks of the same three statistics: this session, then all sessions.
@@ -353,7 +355,23 @@ function renderHcp(m) {
     },
   ];
 
+  // Total HCP dealt to each player over the session — the first thing the
+  // block answers, before the shape of it (average, highest, lowest). Every
+  // hand deals one deck's 40 points four ways, so the row total should read
+  // 40 x hands played; anything less means a hand wasn't logged in full.
+  const sessionTotalRow = {
+    label: "This session total",
+    value: (p) => m.hcpSession[p].sum,
+    show: (p) => fmtNum(m.hcpSession[p].sum),
+    title: (p) => `${m.hcpSession[p].hands} of ${hands.length} hands logged`,
+    totals: true,
+    sumFmt: fmtNum,
+    totalTitle: `Every hand deals 40 HCP, so ${hands.length} hand${hands.length === 1 ? "" : "s"} should total ${fmtNum(hands.length * 40)}`,
+    strong: true,
+  };
+
   const footRows = [
+    sessionTotalRow,
     ...block(m.hcpSession, "This session", false),
     ...block(m.hcpStats, "Ongoing", true).map((r, i) => (i === 0 ? { ...r, rule: true } : r)),
   ];
@@ -365,7 +383,7 @@ function renderHcp(m) {
         const t = spec.title(p);
         return `<td class="num"${t ? ` title="${escapeHtml(t)}"` : ""}>${spec.show(p)}</td>`;
       }).join("")}
-      <td class="num muted">${spec.totals ? sumOf(PLAYERS.map(spec.value)) : ""}</td>
+      <td class="num muted"${spec.totals && spec.totalTitle ? ` title="${escapeHtml(spec.totalTitle)}"` : ""}>${spec.totals ? sumOf(PLAYERS.map(spec.value), spec.sumFmt) : ""}</td>
     </tr>`).join("");
 }
 
@@ -838,4 +856,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260816d";
+export { buildModel, parseUKDate } from "./data.js?v=20260822a";

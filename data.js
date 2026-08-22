@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260816d";
+import { CONFIG } from "./config.js?v=20260822a";
 
 // ---- Fixed players & their signature colours (hex must match tokens.css) ----
 // These are the same five values as --c-david … --c-unknown in tokens.css.
