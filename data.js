@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260822a";
+import { CONFIG } from "./config.js?v=20260822b";
 
 // ---- Fixed players & their signature colours (hex must match tokens.css) ----
 // These are the same five values as --c-david … --c-unknown in tokens.css.
@@ -120,6 +120,11 @@ export const ROUND_START_MS = ROUND_START ? ROUND_START.getTime() : Infinity;
 /**
  * Is this date inside the current round? Null/unparseable dates are never in
  * the round (the model deliberately tolerates a "(no date)" session).
+ *
+ * Always ask this about a row's SESSION day, never its raw form date, so a
+ * night that runs past midnight falls wholly inside the round or wholly
+ * outside it — never half in, with the session's chart point and the round
+ * totals disagreeing about the same hands.
  */
 export function inRound(date) {
   return !!date && date.getTime() >= ROUND_START_MS;
@@ -133,6 +138,56 @@ export function dayKey(d) {
   if (!d) return null;
   const p = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/** Midnight on the day before `d`, as a fresh Date. */
+function previousDay(d) {
+  const out = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  out.setDate(out.getDate() - 1);
+  return out;
+}
+
+// ---- Sessions run past midnight (see CONFIG.SESSION in config.js) -----------
+// A session is a night of bridge, not a calendar day: play that carries on past
+// midnight is the same night, but the form's date rolls over with the clock.
+export const NIGHT_ENDS_AT_HOUR = Number(CONFIG.SESSION?.NIGHT_ENDS_AT_HOUR) || 0;
+
+/** Was this hand submitted in the small hours, before the night is called? */
+function isSmallHours(ts) {
+  return !!ts && ts.getHours() < NIGHT_ENDS_AT_HOUR;
+}
+
+/**
+ * Which night a hand belongs to, as a Date at midnight on the session's own
+ * day. Normally that's simply the date on the form. It rolls back one day only
+ * when BOTH of these hold:
+ *
+ *   • the submission time says the hand was played in the small hours of the
+ *     very day the form names — so the clock and the date box agree that this
+ *     is the new day, which is exactly what the midnight rollover looks like;
+ *   • the evening before actually has hands to join.
+ *
+ * Both guards matter. The first leaves a hand entered the next afternoon under
+ * the date that was typed, and leaves a hand played at 23:50 but submitted at
+ * 00:05 alone (the form still said the earlier day, so it was never split).
+ * The second keeps this strictly a merge: a session that genuinely begins after
+ * midnight keeps its own date rather than being filed under an empty evening.
+ */
+function sessionDayFor(date, ts, eveningDays) {
+  if (!date) return null;
+  const merges =
+    isSmallHours(ts) &&
+    dayKey(ts) === dayKey(date) &&
+    eveningDays.has(dayKey(previousDay(date)));
+  return merges ? previousDay(date) : new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/** Wall-clock label for an epoch-ms instant, e.g. "01:35". */
+export function fmtClock(ms) {
+  if (!ms) return "?";
+  const d = new Date(ms);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 /** Short, friendly date label for chart axes & headings, e.g. "7 Jun 25". */
@@ -316,16 +371,31 @@ export function buildModel(rows) {
   // Drop the header row; ignore fully-empty rows.
   const dataRows = rows.slice(1).filter((r) => r && r.length && String(r[COL.PLAYER] ?? "").trim() !== "");
 
+  // Which days hold a session of their own, i.e. have at least one hand from
+  // outside the small hours. Needed before any row can be assigned, because a
+  // small-hours hand only rolls back onto an evening that actually happened.
+  const eveningDays = new Set();
+  dataRows.forEach((r) => {
+    const date = parseUKDate(r[COL.DATE]);
+    if (date && !isSmallHours(parseUKDate(r[COL.TIMESTAMP]))) eveningDays.add(dayKey(date));
+  });
+
   const records = dataRows.map((r, i) => {
     const ts = parseUKDate(r[COL.TIMESTAMP]);
     const date = parseUKDate(r[COL.DATE]);
+    // The night this hand belongs to — the same as `date` unless play carried
+    // on past midnight, in which case it rolls back onto the evening before.
+    const sessionDate = sessionDayFor(date, ts, eveningDays);
     return {
       idx: i,
       ts,
       tsMs: ts ? ts.getTime() : 0,
       rawDate: String(r[COL.DATE] ?? "").trim(),
       date,
-      year: date ? date.getFullYear() : null,
+      // The session's own day. Everything session-scoped keys off this rather
+      // than `date`, which stays the raw form date of this individual hand.
+      sessionDate,
+      year: sessionDate ? sessionDate.getFullYear() : null,
       hand: String(r[COL.HAND] ?? "").trim(),
       player: normPlayer(r[COL.PLAYER]),
       hcp: num(r[COL.HCP]),
@@ -341,11 +411,12 @@ export function buildModel(rows) {
       tricksMade: num(r[COL.TRICKS_MADE]),
       doubled: String(r[COL.DOUBLED] ?? "").trim(),
       score: num(r[COL.SCORE]),
-      inRound: inRound(date),
+      inRound: inRound(sessionDate),
       // Which session this row belongs to. Derived from the parsed day so it
       // survives column B being written as text on one row and as a Sheets
-      // date serial on the next.
-      sessionKey: dayKey(date) || String(r[COL.DATE] ?? "").trim() || "(no date)",
+      // date serial on the next, and rolled back over midnight so a night that
+      // runs late stays one session.
+      sessionKey: dayKey(sessionDate) || String(r[COL.DATE] ?? "").trim() || "(no date)",
     };
   });
 
@@ -395,10 +466,21 @@ export function buildModel(rows) {
     const key = rec.sessionKey;
     if (!sessionMap.has(key)) {
       const per = {}; PLAYERS.forEach((p) => (per[p] = 0));
-      sessionMap.set(key, { key, date: rec.date, label: fmtDate(rec.date), perPlayer: per, year: rec.year });
+      // Dated by the session's own day, never by whichever of its rows happens
+      // to come first in the sheet — otherwise a night that ran past midnight
+      // could be keyed to one day and labelled with the next.
+      sessionMap.set(key, {
+        key, date: rec.sessionDate, label: fmtDate(rec.sessionDate),
+        perPlayer: per, year: rec.year, ranPastMidnight: false, lastTsMs: 0,
+      });
     }
     const s = sessionMap.get(key);
     if (rec.player in s.perPlayer) s.perPlayer[rec.player] += rec.score;
+    s.lastTsMs = Math.max(s.lastTsMs, rec.tsMs || 0);
+    // Did this night cross midnight? True when a hand's own date is past the
+    // session's day — worth surfacing, so a merged session is visibly merged
+    // rather than quietly missing from the list of dates played.
+    if (rec.date && dayKey(rec.date) !== key) s.ranPastMidnight = true;
   });
 
   const sessions = [...sessionMap.values()].sort((a, b) => {
@@ -568,7 +650,7 @@ export function verifyRound(m) {
   let allMatch = true;
   console.table(PLAYERS.map((p) => {
     const sumOfColumnL = m.records
-      .filter((r) => r.player === p && r.date && r.date.getTime() >= ROUND_START_MS)
+      .filter((r) => r.player === p && r.sessionDate && r.sessionDate.getTime() >= ROUND_START_MS)
       .reduce((sum, r) => sum + r.score, 0);
     const ok = sumOfColumnL === m.roundTotal[p];
     if (!ok) allMatch = false;
@@ -581,8 +663,28 @@ export function verifyRound(m) {
     };
   }));
   console.log(allMatch
-    ? `✓ Every round total equals the sum of column L for that player's rows dated on/after ${ROUND.START}.`
+    ? `✓ Every round total equals the sum of column L for that player's rows whose SESSION falls on/after ${ROUND.START}.`
     : "✗ At least one round total does NOT match the raw column-L sum — investigate.");
+
+  // ---- 1b) Nights that ran past midnight ----
+  // Each of these was two sessions on two calendar days until the small-hours
+  // hands were rolled back onto the evening they belong to. Listed so the
+  // merging is visible and checkable rather than silent.
+  const merged = m.sessions.filter((s) => s.ranPastMidnight);
+  console.log(`Sessions that ran past midnight — ${merged.length} of ${m.sessions.length}` +
+    ` (a new session day starts at ${String(NIGHT_ENDS_AT_HOUR).padStart(2, "0")}:00):`);
+  if (merged.length) {
+    console.table(merged.map((s) => {
+      const rows = m.records.filter((r) => r.sessionKey === s.key);
+      const days = [...new Set(rows.map((r) => r.rawDate).filter(Boolean))];
+      return {
+        session: s.label,
+        hands: new Set(rows.map((r) => r.hand)).size,
+        "form dates merged": days.join(" + "),
+        "latest hand at": fmtClock(Math.max(...rows.map((r) => r.tsMs || 0))),
+      };
+    }));
+  }
 
   // ---- 2) The sessions that make up the round ----
   const roundSessions = m.sessionsRound || [];

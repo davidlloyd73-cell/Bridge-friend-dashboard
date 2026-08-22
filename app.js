@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260822a";
+import { CONFIG } from "./config.js?v=20260822b";
 import {
-  PLAYERS, COLORS, COL, fmtNum, fmtDate, escapeHtml,
+  PLAYERS, COLORS, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260822a";
+} from "./data.js?v=20260822b";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -95,6 +95,17 @@ function renderLatestHand(m) {
     </div>`;
 }
 
+/**
+ * A session that carried on past midnight covers two calendar dates but is
+ * shown under the first. Say when it finished, so the second date isn't just
+ * silently missing from the dashboard.
+ */
+function lateFinishNote(session) {
+  return session && session.ranPastMidnight
+    ? ` · ran to ${fmtClock(session.lastTsMs)} the next morning`
+    : "";
+}
+
 function renderThisSession(m) {
   const meta = $("#this-session-meta");
   const totalsEl = $("#session-totals");
@@ -107,7 +118,8 @@ function renderThisSession(m) {
   }
 
   const hands = m.latestSessionHands || [];
-  meta.textContent = `${m.latestSession.label} · ${hands.length} hand${hands.length === 1 ? "" : "s"} played`;
+  meta.textContent = `${m.latestSession.label} · ${hands.length} hand${hands.length === 1 ? "" : "s"} played`
+    + lateFinishNote(m.latestSession);
 
   // Per-player session totals as colour pills.
   totalsEl.innerHTML = PLAYERS.map((p) => `
@@ -296,6 +308,7 @@ function renderHcp(m) {
   const hands = m.latestSessionHcp || [];
   meta.textContent = m.latestSession
     ? `${m.latestSession.label} · ${hands.length} hand${hands.length === 1 ? "" : "s"}`
+      + lateFinishNote(m.latestSession)
     : "";
 
   if (!hands.length) {
@@ -856,4 +869,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260822a";
+export { buildModel, parseUKDate } from "./data.js?v=20260822b";
