@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260822b";
+import { CONFIG } from "./config.js?v=20260822c";
 
 // ---- Fixed players & their signature colours (hex must match tokens.css) ----
 // These are the same five values as --c-david … --c-unknown in tokens.css.
@@ -763,6 +763,10 @@ export function summariseHand(handRows, fallbackRec) {
     : (declaringRows[0] ? declaringRows[0].score : 0);
   const defScore = defendingRows[0] ? defendingRows[0].score : 0;
 
+  // The defending pair, named, so a hand that went down can say who actually
+  // took the points rather than just showing the declarers' nil.
+  const defenders = [...new Set(defendingRows.map((r) => r.player))].filter((p) => p !== "Unknown");
+
   const level = declarerRow ? declarerRow.level : 0;
   const suit = declarerRow ? declarerRow.suit : "";
   const doubled = declarerRow ? declarerRow.doubled : "";
@@ -777,7 +781,7 @@ export function summariseHand(handRows, fallbackRec) {
     partner,
     level, suit, doubled,
     tricksNeeded, tricksMade, resultDiff,
-    declScore, defScore,
+    declScore, defScore, defenders,
     hasContract: level > 0,
   };
 }

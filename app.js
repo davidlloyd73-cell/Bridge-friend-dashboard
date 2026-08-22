@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260822b";
+import { CONFIG } from "./config.js?v=20260822c";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260822b";
+} from "./data.js?v=20260822c";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -106,6 +106,25 @@ function lateFinishNote(session) {
     : "";
 }
 
+/**
+ * The points a hand actually earned, and who earned them.
+ *
+ * A bridge hand always pays one side or the other, but the row names only the
+ * declaring pair — so showing their score alone reports a failed contract as a
+ * bare "0" and leaves the penalty the defenders took nowhere on the page. When
+ * the points went the other way, name the pair that got them.
+ */
+function pointsHtml(h) {
+  if (h.declScore > 0 || h.defScore <= 0) return fmtNum(h.declScore);
+  const to = (h.defenders && h.defenders.length)
+    ? h.defenders.map(escapeHtml).join(" &amp; ")
+    : "defenders";
+  // Note first, number last: the cell is right-aligned, so keeping the figure
+  // in final position leaves the Points column reading as one straight column
+  // of numbers however many hands went down.
+  return `<span class="points-to">→ ${to}</span>${fmtNum(h.defScore)}`;
+}
+
 function renderThisSession(m) {
   const meta = $("#this-session-meta");
   const totalsEl = $("#session-totals");
@@ -142,7 +161,7 @@ function renderThisSession(m) {
         <td>${side}</td>
         <td>${contractHtml(h)}</td>
         <td>${result} ${tricks}</td>
-        <td class="num">${fmtNum(h.declScore)}</td>
+        <td class="num">${pointsHtml(h)}</td>
       </tr>`;
   }).join("");
 }
@@ -869,4 +888,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260822b";
+export { buildModel, parseUKDate } from "./data.js?v=20260822c";
