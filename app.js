@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260822c";
+import { CONFIG } from "./config.js?v=20260905a";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260822c";
+} from "./data.js?v=20260905a";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -392,7 +392,7 @@ function renderHcp(m) {
   // hand deals one deck's 40 points four ways, so the row total should read
   // 40 x hands played; anything less means a hand wasn't logged in full.
   const sessionTotalRow = {
-    label: "This session total",
+    label: "Whinge Factor",
     value: (p) => m.hcpSession[p].sum,
     show: (p) => fmtNum(m.hcpSession[p].sum),
     title: (p) => `${m.hcpSession[p].hands} of ${hands.length} hands logged`,
@@ -400,6 +400,7 @@ function renderHcp(m) {
     sumFmt: fmtNum,
     totalTitle: `Every hand deals 40 HCP, so ${hands.length} hand${hands.length === 1 ? "" : "s"} should total ${fmtNum(hands.length * 40)}`,
     strong: true,
+    rank: true,
   };
 
   const footRows = [
@@ -408,15 +409,36 @@ function renderHcp(m) {
     ...block(m.hcpStats, "Ongoing", true).map((r, i) => (i === 0 ? { ...r, rule: true } : r)),
   ];
 
-  foot.innerHTML = footRows.map((spec) => `
+  // On a ranked row (the Whinge Factor), mark whoever was dealt least in red and
+  // whoever was dealt most in green — ties share the mark. When all four are
+  // level there is nothing to single out, so nothing is coloured. Only rows with
+  // a value() are ranked: the highest/lowest rows below carry show() alone.
+  const rankOf = (spec) => {
+    if (!spec.rank) return () => "";
+    const vals = PLAYERS.map(spec.value).filter((v) => typeof v === "number");
+    if (vals.length !== PLAYERS.length) return () => "";
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    if (lo === hi) return () => "";
+    return (p) => {
+      const v = spec.value(p);
+      if (v === lo) return " hcp-low";
+      if (v === hi) return " hcp-high";
+      return "";
+    };
+  };
+
+  foot.innerHTML = footRows.map((spec) => {
+    const rank = rankOf(spec);
+    return `
     <tr class="${[spec.strong ? "hcp-strong" : "", spec.rule ? "hcp-rule" : ""].filter(Boolean).join(" ")}">
       <th scope="row">${spec.label}</th>
       ${PLAYERS.map((p) => {
         const t = spec.title(p);
-        return `<td class="num"${t ? ` title="${escapeHtml(t)}"` : ""}>${spec.show(p)}</td>`;
+        return `<td class="num${rank(p)}"${t ? ` title="${escapeHtml(t)}"` : ""}>${spec.show(p)}</td>`;
       }).join("")}
       <td class="num muted"${spec.totals && spec.totalTitle ? ` title="${escapeHtml(spec.totalTitle)}"` : ""}>${spec.totals ? sumOf(PLAYERS.map(spec.value), spec.sumFmt) : ""}</td>
-    </tr>`).join("");
+    </tr>`;
+  }).join("");
 }
 
 /**
@@ -888,4 +910,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260822c";
+export { buildModel, parseUKDate } from "./data.js?v=20260905a";

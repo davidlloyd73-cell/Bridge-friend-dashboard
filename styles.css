@@ -292,6 +292,11 @@ table.standings th .swatch {
 .hcp-table tfoot tr.hcp-rule th,
 .hcp-table tfoot tr.hcp-rule td { border-top: 1px solid var(--line); }
 .hcp-table td.hcp-off { color: var(--gold); font-weight: 700; }
+
+/* Whinge Factor: least HCP dealt in red, most in green. These sit on the
+   .hcp-strong row, so they need the extra class to win over its --ink colour. */
+.hcp-table tfoot tr.hcp-strong td.hcp-low  { color: var(--bad); }
+.hcp-table tfoot tr.hcp-strong td.hcp-high { color: var(--good); }
 /* One player submitted this hand number twice with different points. */
 .hcp-table td.hcp-clash,
 .audit-table td.hcp-clash { color: var(--gold); }
