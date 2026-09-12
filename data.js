@@ -573,6 +573,18 @@ export function buildModel(rows) {
     latestSessionKey ? handHcp.filter((h) => h.sessionKey === latestSessionKey) : []
   );
 
+  // Efficiency for the night alone, on exactly the same definition as the
+  // all-time and round figures: points won per HCP dealt. The divisor is the
+  // session's own Whinge Factor, so the two numbers on a session card are
+  // read off the same denominator. Null — not zero — on a night whose HCP
+  // wasn't logged, because "no HCP recorded" is not an efficiency of nothing.
+  const efficiencySession = {};
+  PLAYERS.forEach((p) => {
+    const hcp = hcpSession[p].sum;
+    const pts = latestSession ? latestSession.perPlayer[p] : 0;
+    efficiencySession[p] = hcp > 0 ? Math.round(pts / hcp) : null;
+  });
+
   // ---- Sheet audit: every hand in the record that doesn't look right -------
   // Three faults, all fixable in the Google Sheet:
   //   offTotal   — four seats logged but they don't sum to 40, so at least one
@@ -618,6 +630,7 @@ export function buildModel(rows) {
 
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
+    efficiencySession,
     handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,

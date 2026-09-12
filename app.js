@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260905a";
+import { CONFIG } from "./config.js?v=20260912a";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260905a";
+} from "./data.js?v=20260912a";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -125,6 +125,80 @@ function pointsHtml(h) {
   return `<span class="points-to">→ ${to}</span>${fmtNum(h.defScore)}`;
 }
 
+/**
+ * Standings positions for one night: highest points first, equal scores
+ * sharing a place (so two on 4,000 are both 2nd and the next is 4th). Ties
+ * fall back to the fixed player order, which keeps the cards from swapping
+ * about between refreshes when nothing has actually changed.
+ */
+function sessionPositions(perPlayer) {
+  const ranked = [...PLAYERS].sort((a, b) => {
+    const d = perPlayer[b] - perPlayer[a];
+    return d !== 0 ? d : PLAYERS.indexOf(a) - PLAYERS.indexOf(b);
+  });
+  const place = new Map();
+  ranked.forEach((p, i) => {
+    const prev = i > 0 ? ranked[i - 1] : null;
+    place.set(p, prev !== null && perPlayer[p] === perPlayer[prev] ? place.get(prev) : i + 1);
+  });
+  return { ranked, place };
+}
+
+const ORDINALS = ["", "1st", "2nd", "3rd", "4th"];
+
+/**
+ * Mark the extremes of a set of values: lowest gets `low`, highest gets `high`,
+ * ties sharing the mark. Nothing is marked when a value is missing or all four
+ * are level, because then there is no one to single out.
+ */
+function extremeMarks(values) {
+  const nums = Object.values(values).filter((v) => typeof v === "number");
+  if (nums.length !== PLAYERS.length) return () => "";
+  const lo = Math.min(...nums), hi = Math.max(...nums);
+  if (lo === hi) return () => "";
+  return (p) => (values[p] === lo ? " low" : values[p] === hi ? " high" : "");
+}
+
+/**
+ * The night's four totals, built like the round standings cards: the session
+ * score large, then the two figures that explain it — efficiency (points per
+ * HCP dealt) and the Whinge Factor (the HCP you were dealt in the first
+ * place), the latter marked green when you were dealt the most and red when
+ * you were dealt the least, exactly as in the High card points panel.
+ *
+ * The cards are ordered by the night's standings rather than by the fixed
+ * player order used elsewhere, so the position is readable off the row itself.
+ */
+function sessionCardsHtml(m) {
+  const per = m.latestSession.perPlayer;
+  const { ranked, place } = sessionPositions(per);
+  const whinge = {};
+  PLAYERS.forEach((p) => (whinge[p] = m.hcpSession[p].sum));
+  const whingeMark = extremeMarks(whinge);
+  // A trophy only when someone is actually out in front: nobody has scored
+  // yet, or the top place is shared, and there is no single leader to crown.
+  const outright = PLAYERS.filter((q) => place.get(q) === 1);
+  const leader = (outright.length === 1 && per[outright[0]] !== 0) ? outright[0] : null;
+
+  return ranked.map((p) => {
+    const leads = p === leader;
+    const eff = m.efficiencySession[p];
+    return `
+      <div class="pcard ${leads ? "leader" : ""}" style="--pc:${COLORS[p]}">
+        ${leads ? '<span class="medal" title="Leading tonight">🏆</span>' : ""}
+        <div class="name">
+          <span class="swatch"></span>${escapeHtml(p)}
+          <span class="pos" title="Position tonight">${ORDINALS[place.get(p)]}</span>
+        </div>
+        <div class="big">${fmtNum(per[p])}</div>
+        <div class="sub">
+          <span>Eff: <b>${eff === null ? "—" : eff}</b></span>
+          <span title="HCP dealt to ${escapeHtml(p)} tonight">Whinge: <b class="whinge${whingeMark(p)}">${fmtNum(whinge[p])}</b></span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
 function renderThisSession(m) {
   const meta = $("#this-session-meta");
   const totalsEl = $("#session-totals");
@@ -140,12 +214,8 @@ function renderThisSession(m) {
   meta.textContent = `${m.latestSession.label} · ${hands.length} hand${hands.length === 1 ? "" : "s"} played`
     + lateFinishNote(m.latestSession);
 
-  // Per-player session totals as colour pills.
-  totalsEl.innerHTML = PLAYERS.map((p) => `
-    <span class="mini-pill">
-      <span class="swatch" style="background:${COLORS[p]}"></span>
-      ${escapeHtml(p)} <b>${fmtNum(m.latestSession.perPlayer[p])}</b>
-    </span>`).join("");
+  // Per-player session totals as cards, in the order they finished the night.
+  totalsEl.innerHTML = sessionCardsHtml(m);
 
   // Hand-by-hand rows (newest hand first).
   body.innerHTML = [...hands].reverse().map((h) => {
@@ -910,4 +980,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260905a";
+export { buildModel, parseUKDate } from "./data.js?v=20260912a";

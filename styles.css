@@ -227,6 +227,26 @@ main {
 .pcard .medal { position: absolute; top: 10px; right: 12px; font-size: 1.25rem; }
 .pcard.leader { box-shadow: 0 0 0 2px var(--pc) inset, var(--shadow); }
 
+/* ---------- "This session" cards ----------
+   The same card as the round standings, with the night's figures on it. */
+#session-totals + .session-cards-note { margin: -6px 0 14px; }
+#session-totals .sub b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+/* Where a card sits in the night's standings. The order of the cards says it
+   already; this only removes the doubt about whether the order means anything. */
+#session-totals .name .pos {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+/* Clear of the leader's trophy, which is pinned to the same corner. */
+#session-totals .pcard.leader .name .pos { margin-right: 1.9rem; }
+/* Whinge Factor: dealt the most in green, the least in red, matching the same
+   figure in the High card points panel. */
+#session-totals .whinge.high { color: var(--good); }
+#session-totals .whinge.low  { color: var(--bad); }
+
 /* ---------- Standings table ---------- */
 .table-wrap { overflow-x: auto; min-width: 0; }
 table.standings {
