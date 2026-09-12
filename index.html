@@ -10,7 +10,7 @@
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20260905a" />
+  <link rel="stylesheet" href="styles.css?v=20260912a" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -46,7 +46,10 @@
         <h2 id="this-session-title">This session</h2>
         <span class="muted small" id="this-session-meta"></span>
       </div>
-      <div id="session-totals" class="mini-leaderboard"></div>
+      <div id="session-totals" class="player-cards"></div>
+      <p class="muted small session-cards-note">Cards run in tonight&rsquo;s order,
+        whoever is ahead first. Eff is points won per HCP dealt; Whinge is the HCP
+        you were dealt in the first place &mdash; most in green, least in red.</p>
       <div class="table-wrap">
         <table class="standings" id="session-hands-table">
           <thead>
@@ -237,6 +240,6 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script type="module" src="app.js?v=20260905a"></script>
+  <script type="module" src="app.js?v=20260912a"></script>
 </body>
 </html>
