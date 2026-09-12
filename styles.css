@@ -337,7 +337,31 @@ table.standings th .swatch {
 .audit-fill { color: var(--teal); font-style: italic; }
 
 /* ---------- Charts ---------- */
-.chart-box { position: relative; height: clamp(260px, 45vw, 420px); }
+.chart-box {
+  position: relative;
+  height: clamp(260px, 45vw, 420px);
+  cursor: zoom-in;
+  border-radius: 10px;
+  transition: height .18s ease;
+}
+.chart-box:focus-visible { outline: 2px solid var(--teal); outline-offset: 4px; }
+.chart-hint { margin: 8px 0 0; }
+/* The magnified note carries a caveat about the axis, so it is not a whisper. */
+.chart-hint-on { color: var(--gold); }
+
+/* Magnified. The panel steps out past the reading column and the chart roughly
+   doubles in height — with the shorter session window, that is what pulls four
+   near-identical lines apart. */
+.chart-box.expanded { height: min(78vh, 820px); cursor: zoom-out; }
+.panel.chart-expanded {
+  width: min(96vw, 1500px);
+  margin-left: calc(50% - min(96vw, 1500px) / 2);
+  transition: width .18s ease, margin-left .18s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-box, .panel.chart-expanded { transition: none; }
+}
 
 /* ---------- Mini 2026 leaderboard ---------- */
 .mini-leaderboard {
