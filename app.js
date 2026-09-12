@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260912a";
+import { CONFIG } from "./config.js?v=20260912b";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260912a";
+} from "./data.js?v=20260912b";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -22,6 +22,15 @@ let backoffUntil = 0;           // epoch ms; don't fetch before this on errors
 // ---- Chart instances (created lazily) ----
 let chartAllTime = null;
 let chartRound = null;
+
+// ---- Chart magnification ----
+// Four players who play as partners finish close together, and on an axis that
+// spans the whole history those lines sit on top of one another. Magnifying
+// narrows the view to the last few sessions and fits the axis to just those
+// scores, which is what actually separates them — a taller chart alone only
+// scales a 6%-of-height gap to 12%.
+const ZOOM_SESSIONS = 10;
+const chartZoom = { alltime: false, round: false };
 
 // ---- Sort state for the standings tables ----
 let sortState = { key: "grand", dir: "desc" };
@@ -762,34 +771,158 @@ function roundChartOptions(m) {
   return o;
 }
 
+/** The last `n` columns of a labels/series pair (or all of it, if shorter). */
+function tailWindow(labels, series, n) {
+  const from = Math.max(0, labels.length - n);
+  const out = {};
+  PLAYERS.forEach((p) => (out[p] = (series[p] || []).slice(from)));
+  return { labels: labels.slice(from), series: out };
+}
+
+/**
+ * An axis fitted to the values actually plotted, with a little air top and
+ * bottom. Only used when magnified: it exaggerates every gap, which is the
+ * point, and why the magnified state says so on the page.
+ */
+function fittedY(series) {
+  const vals = [];
+  PLAYERS.forEach((p) => (series[p] || []).forEach((v) => {
+    if (typeof v === "number" && Number.isFinite(v)) vals.push(v);
+  }));
+  if (!vals.length) return null;
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  if (hi === lo) return null;
+  const pad = (hi - lo) * 0.08;
+  // Scores are cumulative and never negative, so don't let the padding open a
+  // stretch of axis below zero that no line could ever reach.
+  return { min: lo >= 0 ? Math.max(0, lo - pad) : lo - pad, max: hi + pad };
+}
+
+/** What the all-time chart should plot, normal or magnified. */
+function allTimeView(m) {
+  if (!chartZoom.alltime) {
+    return {
+      labels: m.allTime.labels, series: m.allTime.series,
+      y: { beginAtZero: true, min: undefined, max: undefined },
+    };
+  }
+  const w = tailWindow(m.allTime.labels, m.allTime.series, ZOOM_SESSIONS);
+  const f = fittedY(w.series);
+  return {
+    labels: w.labels, series: w.series,
+    y: { beginAtZero: false, min: f ? f.min : undefined, max: f ? f.max : undefined },
+  };
+}
+
+/**
+ * What the round chart should plot. Normally the padded series on an axis
+ * pinned to the target, so height reads as progress. Magnified, the blank
+ * look-ahead slots go (there is nothing to climb into when you are reading the
+ * recent past) and the axis fits the scores, which drops the 50,000 ceiling.
+ */
+function roundView(m) {
+  if (!chartZoom.round) {
+    const padded = paddedRoundSeries(m);
+    return {
+      labels: padded.labels, series: padded.series,
+      y: { beginAtZero: true, min: undefined, max: roundYMax(m) },
+      tickStep: ROUND.TARGET / 5,
+    };
+  }
+  const w = tailWindow(m.raceRound.labels, m.raceRound.series, ZOOM_SESSIONS);
+  const f = fittedY(w.series);
+  return {
+    labels: w.labels, series: w.series,
+    y: { beginAtZero: false, min: f ? f.min : undefined, max: f ? f.max : undefined },
+    tickStep: undefined,
+  };
+}
+
+/**
+ * The two magnifiable charts. Each pairs the clickable box with its chart
+ * instance and the line of text under it, so one toggle serves both.
+ */
+const ZOOMABLE = {
+  alltime: { box: "#box-alltime", hint: "#hint-alltime", chart: () => chartAllTime },
+  round:   { box: "#box-2026",    hint: "#hint-2026",    chart: () => chartRound },
+};
+
+/**
+ * Magnify a chart, or put it back. Magnified, the panel widens past the reading
+ * column and roughly doubles in height, and the chart narrows to the last few
+ * sessions on a fitted axis.
+ *
+ * The note under the chart changes with it, because a fitted axis makes every
+ * gap look bigger than it is: a reader who missed the click still needs to know
+ * the scale is no longer the full one.
+ */
+function toggleChartZoom(key) {
+  const z = ZOOMABLE[key];
+  if (!z) return;
+  chartZoom[key] = !chartZoom[key];
+  const on = chartZoom[key];
+  const box = $(z.box);
+
+  box.classList.toggle("expanded", on);
+  box.closest(".panel").classList.toggle("chart-expanded", on);
+  box.setAttribute("aria-expanded", String(on));
+  box.title = on ? "Click to shrink" : "Click to magnify";
+  $(z.hint).textContent = on
+    ? `Magnified: last ${ZOOM_SESSIONS} sessions, and the scale starts at the lowest score shown rather than at zero — so the gaps look wider here than they really are. Click the chart to go back.`
+    : "Click the chart to magnify it.";
+  $(z.hint).classList.toggle("chart-hint-on", on);
+
+  if (lastGoodModel) renderCharts(lastGoodModel);
+  // The box just changed size; Chart.js redraws on its own, but not until its
+  // resize observer fires, which leaves a frame of stretched canvas.
+  const chart = z.chart();
+  if (chart) chart.resize();
+  if (on) box.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+/**
+ * True when a click landed on the legend, which Chart.js draws on the same
+ * canvas and uses to show and hide players. Toggling a player off should not
+ * also magnify the chart.
+ */
+function clickedLegend(chart, evt) {
+  const l = chart && chart.legend;
+  if (!l) return false;
+  const r = chart.canvas.getBoundingClientRect();
+  const x = evt.clientX - r.left, y = evt.clientY - r.top;
+  return x >= l.left && x <= l.right && y >= l.top && y <= l.bottom;
+}
+
 function renderCharts(m) {
   if (typeof window.Chart === "undefined") return; // CDN not ready yet
-  // All-time — auto-scaled; it has no finish line to aim at.
+  // All-time — no finish line to aim at, so the axis is the data's own.
+  const at = allTimeView(m);
   if (!chartAllTime) {
     chartAllTime = new Chart($("#chart-alltime"), {
       type: "line",
-      data: { labels: m.allTime.labels, datasets: lineDatasets(m.allTime.series) },
+      data: { labels: at.labels, datasets: lineDatasets(at.series) },
       options: chartOptions(),
     });
-  } else {
-    chartAllTime.data.labels = m.allTime.labels;
-    chartAllTime.data.datasets.forEach((ds) => (ds.data = m.allTime.series[ds.label]));
-    chartAllTime.update();
   }
-  // Current round — axis pinned to the target, with blank slots ahead.
-  const padded = paddedRoundSeries(m);
+  chartAllTime.data.labels = at.labels;
+  chartAllTime.data.datasets.forEach((ds) => (ds.data = at.series[ds.label]));
+  Object.assign(chartAllTime.options.scales.y, at.y);
+  chartAllTime.update();
+
+  // Current round — axis pinned to the target unless magnified.
+  const rv = roundView(m);
   if (!chartRound) {
     chartRound = new Chart($("#chart-2026"), {
       type: "line",
-      data: { labels: padded.labels, datasets: lineDatasets(padded.series) },
+      data: { labels: rv.labels, datasets: lineDatasets(rv.series) },
       options: roundChartOptions(m),
     });
-  } else {
-    chartRound.data.labels = padded.labels;
-    chartRound.data.datasets.forEach((ds) => (ds.data = padded.series[ds.label]));
-    chartRound.options.scales.y.max = roundYMax(m); // may grow past the target
-    chartRound.update();
   }
+  chartRound.data.labels = rv.labels;
+  chartRound.data.datasets.forEach((ds) => (ds.data = rv.series[ds.label]));
+  Object.assign(chartRound.options.scales.y, rv.y);
+  chartRound.options.scales.y.ticks.stepSize = rv.tickStep;
+  chartRound.update();
 }
 
 /**
@@ -961,6 +1094,27 @@ function init() {
     });
   });
 
+  // Click (or Enter/Space) a chart to magnify it, and again to put it back.
+  Object.entries(ZOOMABLE).forEach(([key, z]) => {
+    const box = $(z.box);
+    if (!box) return;
+    box.addEventListener("click", (e) => {
+      if (clickedLegend(z.chart(), e)) return;
+      toggleChartZoom(key);
+    });
+    box.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault(); // Space would otherwise scroll the page
+      toggleChartZoom(key);
+    });
+  });
+
+  // Escape closes whichever chart is magnified.
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    Object.keys(ZOOMABLE).forEach((key) => { if (chartZoom[key]) toggleChartZoom(key); });
+  });
+
   // Manual refresh button.
   $("#refresh-now").addEventListener("click", () => refresh({ manual: true }));
 
@@ -980,4 +1134,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260912a";
+export { buildModel, parseUKDate } from "./data.js?v=20260912b";

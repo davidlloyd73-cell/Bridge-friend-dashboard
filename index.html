@@ -10,7 +10,7 @@
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20260912a" />
+  <link rel="stylesheet" href="styles.css?v=20260912b" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -130,9 +130,11 @@
     <section class="panel" aria-labelledby="race2026-title">
       <h2 id="race2026-title">Round race</h2>
       <div id="mini-2026" class="mini-leaderboard"></div>
-      <div class="chart-box">
+      <div class="chart-box" id="box-2026" role="button" tabindex="0"
+           aria-expanded="false" title="Click to magnify">
         <canvas id="chart-2026" aria-label="Current round cumulative score line chart" role="img"></canvas>
       </div>
+      <p class="muted small chart-hint" id="hint-2026">Click the chart to magnify it.</p>
     </section>
 
     <!-- LEADERBOARD CARDS -->
@@ -220,9 +222,11 @@
     <!-- ALL-TIME RACE -->
     <section class="panel" aria-labelledby="race-title">
       <h2 id="race-title">Cumulative score race <span class="muted small">(all-time)</span></h2>
-      <div class="chart-box">
+      <div class="chart-box" id="box-alltime" role="button" tabindex="0"
+           aria-expanded="false" title="Click to magnify">
         <canvas id="chart-alltime" aria-label="All-time cumulative score line chart" role="img"></canvas>
       </div>
+      <p class="muted small chart-hint" id="hint-alltime">Click the chart to magnify it.</p>
     </section>
   </main>
 
@@ -240,6 +244,6 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script type="module" src="app.js?v=20260912a"></script>
+  <script type="module" src="app.js?v=20260912b"></script>
 </body>
 </html>

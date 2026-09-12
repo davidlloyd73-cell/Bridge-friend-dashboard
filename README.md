@@ -11,6 +11,10 @@ live you never have to touch it.
 - No build step, no server, no frameworks — just static HTML/CSS/JS.
 - Polls the sheet every 60 seconds and only re-draws when something changed.
 - Two line charts (all-time race + current-round race) via Chart.js from a CDN.
+- Click either chart to magnify it: the panel widens and doubles in height, and
+  the view narrows to the last 10 sessions on an axis fitted to those scores —
+  which is what actually separates four players finishing close together.
+  Click again (or press Escape) to go back.
 
 ---
 
