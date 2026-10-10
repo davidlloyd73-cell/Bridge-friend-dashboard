@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20260912b";
+import { CONFIG } from "./config.js?v=20261010a";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20260912b";
+} from "./data.js?v=20261010a";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -243,6 +243,38 @@ function renderThisSession(m) {
         <td class="num">${pointsHtml(h)}</td>
       </tr>`;
   }).join("");
+}
+
+/**
+ * How often each player has been declarer: this session large, all-time and
+ * that player's share of every declared hand underneath. Fewest in red and
+ * most in green on both, so whoever never gets the contract stands out.
+ */
+function renderDeclarer(m) {
+  const el = $("#declarer-cards");
+  if (!el) return;
+  const sess = m.declarerSession, all = m.declarerAll;
+  const sessTotal = PLAYERS.reduce((a, p) => a + sess[p], 0);
+  const allTotal = PLAYERS.reduce((a, p) => a + all[p], 0);
+  const sessMark = sessTotal ? extremeMarks(sess) : () => "";
+  const allMark = extremeMarks(all);
+
+  el.innerHTML = PLAYERS.map((p) => {
+    const share = allTotal ? Math.round((all[p] / allTotal) * 100) : 0;
+    return `
+      <div class="pcard" style="--pc:${COLORS[p]}">
+        <div class="name"><span class="swatch"></span>${escapeHtml(p)}</div>
+        <div class="big decl${sessMark(p)}" title="Hands ${escapeHtml(p)} declared this session">${fmtNum(sess[p])}</div>
+        <div class="sub">
+          <span>All-time: <b class="decl${allMark(p)}">${fmtNum(all[p])}</b></span>
+          <span>Share: <b>${share}%</b></span>
+        </div>
+      </div>`;
+  }).join("");
+
+  $("#declarer-meta").textContent = m.latestSession
+    ? `${m.latestSession.label} · ${sessTotal} declared hand${sessTotal === 1 ? "" : "s"} · ${fmtNum(allTotal)} all-time`
+    : "";
 }
 
 function renderPlayerCards(m) {
@@ -952,6 +984,7 @@ function renderRoundLabels() {
 function renderAll(m) {
   renderLatestHand(m);
   renderThisSession(m);
+  renderDeclarer(m);
   renderHcp(m);
   renderAudit(m);
   renderRoundCards(m);
@@ -1134,4 +1167,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20260912b";
+export { buildModel, parseUKDate } from "./data.js?v=20261010a";
