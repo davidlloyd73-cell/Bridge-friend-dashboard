@@ -585,6 +585,35 @@ export function buildModel(rows) {
     efficiencySession[p] = hcp > 0 ? Math.round(pts / hcp) : null;
   });
 
+  // ---- Declarer counts: who has played the hand, this session and all-time --
+  // One count per HAND, not per row: both declaring partners name the declarer
+  // in column G, so counting rows would credit each contract twice. The
+  // declarer's own row wins if the pair disagree; otherwise the commonest name.
+  // A hand nobody named a declarer on (passed out, or G left blank) counts for
+  // no one rather than being guessed.
+  const declarerByHand = new Map(); // `${sessionKey}|${hand}` -> player
+  const namedOn = new Map();
+  records.forEach((rec) => {
+    if (!PLAYERS.includes(rec.declarer)) return;
+    const key = `${rec.sessionKey}|${rec.hand}`;
+    if (!namedOn.has(key)) namedOn.set(key, []);
+    namedOn.get(key).push(rec);
+  });
+  namedOn.forEach((rows, key) => {
+    const own = rows.find((r) => r.player === r.declarer);
+    if (own) { declarerByHand.set(key, own.declarer); return; }
+    const tally = {};
+    rows.forEach((r) => (tally[r.declarer] = (tally[r.declarer] || 0) + 1));
+    declarerByHand.set(key, Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0]);
+  });
+
+  const declarerAll = {}, declarerSession = {};
+  PLAYERS.forEach((p) => { declarerAll[p] = 0; declarerSession[p] = 0; });
+  declarerByHand.forEach((p, key) => {
+    declarerAll[p] += 1;
+    if (latestSessionKey && key.startsWith(`${latestSessionKey}|`)) declarerSession[p] += 1;
+  });
+
   // ---- Sheet audit: every hand in the record that doesn't look right -------
   // Three faults, all fixable in the Google Sheet:
   //   offTotal   — four seats logged but they don't sum to 40, so at least one
@@ -630,7 +659,7 @@ export function buildModel(rows) {
 
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
-    efficiencySession,
+    efficiencySession, declarerAll, declarerSession,
     handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,
