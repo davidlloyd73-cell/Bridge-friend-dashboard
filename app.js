@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261010a";
+import { CONFIG } from "./config.js?v=20261010b";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261010a";
+} from "./data.js?v=20261010b";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -247,7 +247,8 @@ function renderThisSession(m) {
 
 /**
  * How often each player has been declarer: this session large, all-time and
- * that player's share of every declared hand underneath. Fewest in red and
+ * that player's share of every declared hand underneath, then how many of
+ * those contracts they made — tonight as a count, all-time as a success rate. Fewest in red and
  * most in green on both, so whoever never gets the contract stands out.
  */
 function renderDeclarer(m) {
@@ -258,9 +259,15 @@ function renderDeclarer(m) {
   const allTotal = PLAYERS.reduce((a, p) => a + all[p], 0);
   const sessMark = sessTotal ? extremeMarks(sess) : () => "";
   const allMark = extremeMarks(all);
+  // Success rate: contracts made out of contracts declared with a result logged.
+  const pct = (r) => (r.of ? Math.round((r.made / r.of) * 100) : null);
+  const rateAll = {};
+  PLAYERS.forEach((p) => (rateAll[p] = pct(m.declarerMadeAll[p])));
+  const rateMark = extremeMarks(rateAll);
 
   el.innerHTML = PLAYERS.map((p) => {
     const share = allTotal ? Math.round((all[p] / allTotal) * 100) : 0;
+    const ms = m.declarerMadeSession[p], ma = m.declarerMadeAll[p];
     return `
       <div class="pcard" style="--pc:${COLORS[p]}">
         <div class="name"><span class="swatch"></span>${escapeHtml(p)}</div>
@@ -268,6 +275,10 @@ function renderDeclarer(m) {
         <div class="sub">
           <span>All-time: <b class="decl${allMark(p)}">${fmtNum(all[p])}</b></span>
           <span>Share: <b>${share}%</b></span>
+        </div>
+        <div class="sub">
+          <span title="Contracts ${escapeHtml(p)} made this session, of those declared">Made: <b>${ms.made}/${ms.of}</b></span>
+          <span title="${ma.made} of ${ma.of} contracts made, all-time">Success: <b class="decl${rateMark(p)}">${rateAll[p] === null ? "—" : rateAll[p] + "%"}</b></span>
         </div>
       </div>`;
   }).join("");
@@ -1167,4 +1178,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261010a";
+export { buildModel, parseUKDate } from "./data.js?v=20261010b";

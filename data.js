@@ -591,7 +591,7 @@ export function buildModel(rows) {
   // declarer's own row wins if the pair disagree; otherwise the commonest name.
   // A hand nobody named a declarer on (passed out, or G left blank) counts for
   // no one rather than being guessed.
-  const declarerByHand = new Map(); // `${sessionKey}|${hand}` -> player
+  const declarerByHand = new Map(); // `${sessionKey}|${hand}` -> { player, made }
   const namedOn = new Map();
   records.forEach((rec) => {
     if (!PLAYERS.includes(rec.declarer)) return;
@@ -601,17 +601,36 @@ export function buildModel(rows) {
   });
   namedOn.forEach((rows, key) => {
     const own = rows.find((r) => r.player === r.declarer);
-    if (own) { declarerByHand.set(key, own.declarer); return; }
-    const tally = {};
-    rows.forEach((r) => (tally[r.declarer] = (tally[r.declarer] || 0) + 1));
-    declarerByHand.set(key, Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0]);
+    let player = own ? own.declarer : null;
+    if (!player) {
+      const tally = {};
+      rows.forEach((r) => (tally[r.declarer] = (tally[r.declarer] || 0) + 1));
+      player = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0];
+    }
+    // Did the contract make? Read off the declarer's own row where there is
+    // one, else a partner's row naming the same declarer. Null — not "down" —
+    // when the contract or tricks weren't logged: a blank tricks cell reads as
+    // 0, and nobody really takes no tricks at all.
+    const src = [own, ...rows.filter((r) => r.declarer === player)]
+      .find((r) => r && r.level > 0 && r.tricksMade > 0);
+    const made = src ? src.tricksMade >= src.level + 6 : null;
+    declarerByHand.set(key, { player, made });
   });
 
-  const declarerAll = {}, declarerSession = {};
-  PLAYERS.forEach((p) => { declarerAll[p] = 0; declarerSession[p] = 0; });
-  declarerByHand.forEach((p, key) => {
+  // For each player: hands declared, and of those with a result logged, how
+  // many made — this session and all-time.
+  const declarerAll = {}, declarerSession = {}, declarerMadeAll = {}, declarerMadeSession = {};
+  PLAYERS.forEach((p) => {
+    declarerAll[p] = 0; declarerSession[p] = 0;
+    declarerMadeAll[p] = { made: 0, of: 0 }; declarerMadeSession[p] = { made: 0, of: 0 };
+  });
+  declarerByHand.forEach(({ player: p, made }, key) => {
+    const inSession = latestSessionKey && key.startsWith(`${latestSessionKey}|`);
     declarerAll[p] += 1;
-    if (latestSessionKey && key.startsWith(`${latestSessionKey}|`)) declarerSession[p] += 1;
+    if (inSession) declarerSession[p] += 1;
+    if (made === null) return;
+    declarerMadeAll[p].of += 1; declarerMadeAll[p].made += made ? 1 : 0;
+    if (inSession) { declarerMadeSession[p].of += 1; declarerMadeSession[p].made += made ? 1 : 0; }
   });
 
   // ---- Sheet audit: every hand in the record that doesn't look right -------
@@ -659,7 +678,7 @@ export function buildModel(rows) {
 
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
-    efficiencySession, declarerAll, declarerSession,
+    efficiencySession, declarerAll, declarerSession, declarerMadeAll, declarerMadeSession,
     handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,

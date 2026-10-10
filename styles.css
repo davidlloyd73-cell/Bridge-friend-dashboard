@@ -250,6 +250,7 @@ main {
 /* ---------- Declarer cards ----------
    Most hands declared in green, fewest in red — session and all-time alike. */
 #declarer-cards + p { margin: -6px 0 0; }
+#declarer-cards .sub + .sub { margin-top: 4px; }
 #declarer-cards .sub b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 #declarer-cards .decl.high { color: var(--good); }
 #declarer-cards .decl.low  { color: var(--bad); }

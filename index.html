@@ -10,7 +10,7 @@
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20261010a" />
+  <link rel="stylesheet" href="styles.css?v=20261010b" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -78,8 +78,9 @@
       </div>
       <div id="declarer-cards" class="player-cards"></div>
       <p class="muted small">How many hands each player has declared &mdash; large for
-        this session, then all-time with the share of every declared hand. Most in
-        green, fewest in red. Counted once per hand from the Declarer answer; a hand
+        this session, then all-time with the share of every declared hand. Below that,
+        contracts made: tonight as made/declared, and the all-time success rate.
+        Most in green, fewest (or worst) in red. Counted once per hand from the Declarer answer; a hand
         with no declarer named counts for no one.</p>
     </section>
 
@@ -257,6 +258,6 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script type="module" src="app.js?v=20261010a"></script>
+  <script type="module" src="app.js?v=20261010b"></script>
 </body>
 </html>
