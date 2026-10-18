@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261018c";
+import { CONFIG } from "./config.js?v=20261018d";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261018c";
+} from "./data.js?v=20261018d";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -1067,6 +1067,7 @@ function renderRoundLabels() {
   const L = ROUND.LABEL;
   const set = (sel, text) => { const el = $(sel); if (el) el.textContent = text; };
 
+  set("#tabbtn-round", L);
   set("#players-2026-title", `${L} Standings`);
   set("#race2026-title", `${L} race — to ${fmtNum(ROUND.TARGET)}`);
   set("#th-round-total", `${L} total`);
@@ -1157,6 +1158,12 @@ window.addEventListener("themechange", () => {
   if (chartAllTime) { chartAllTime.destroy(); chartAllTime = null; }
   if (chartRound) { chartRound.destroy(); chartRound = null; }
   if (lastGoodModel) renderCharts(lastGoodModel);
+});
+
+// Charts drawn while their pane was hidden have no size to measure; they are
+// told to re-measure when their tab opens.
+window.addEventListener("tabchange", () => {
+  [chartAllTime, chartRound].forEach((c) => { if (c) c.resize(); });
 });
 
 function renderAll(m) {
@@ -1348,4 +1355,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261018c";
+export { buildModel, parseUKDate } from "./data.js?v=20261018d";

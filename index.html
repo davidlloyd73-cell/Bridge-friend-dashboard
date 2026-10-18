@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bridge Friends — Live Dashboard</title>
-  <script src="theme.js?v=20261018c"></script>
+  <script src="theme.js?v=20261018d"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Fraunces (display) · Spectral (body) · IBM Plex Mono (all numerals).
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20261018c" />
+  <link rel="stylesheet" href="styles.css?v=20261018d" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -36,6 +36,16 @@
     <!-- HEADLINE: the one-glance answer. Written by app.js. -->
     <section class="headline" id="headline" aria-label="Headline" aria-live="polite"></section>
 
+    <!-- TABS: one pane at a time. tabs.js wires these up; the pane ids and
+         the data-tab names must match. The Round label is written by app.js. -->
+    <nav class="tabs" role="tablist" aria-label="Dashboard sections">
+      <button class="tab" role="tab" id="tabbtn-tonight" data-tab="tonight" aria-controls="tab-tonight" aria-selected="true">Tonight</button>
+      <button class="tab" role="tab" id="tabbtn-round" data-tab="round" aria-controls="tab-round" aria-selected="false" tabindex="-1">Round</button>
+      <button class="tab" role="tab" id="tabbtn-alltime" data-tab="alltime" aria-controls="tab-alltime" aria-selected="false" tabindex="-1">All-time</button>
+      <button class="tab" role="tab" id="tabbtn-players" data-tab="players" aria-controls="tab-players" aria-selected="false" tabindex="-1">Players</button>
+    </nav>
+
+    <div class="tab-pane" id="tab-tonight" role="tabpanel" aria-labelledby="tabbtn-tonight">
     <!-- LATEST HAND -->
     <section class="panel latest-hand" aria-labelledby="latest-hand-title">
       <h2 id="latest-hand-title">Latest hand</h2>
@@ -116,7 +126,9 @@
           lowest, for the detail.</p>
       </div>
     </section>
+    </div>
 
+    <div class="tab-pane" id="tab-round" role="tabpanel" aria-labelledby="tabbtn-round" hidden>
     <!-- CURRENT ROUND STANDINGS.  Every "round" label below is written by
          app.js from CONFIG.ROUND.LABEL — the text here is only a placeholder
          for the moment before the script runs. -->
@@ -154,7 +166,9 @@
       </div>
       <p class="muted small chart-hint" id="hint-2026">Click the chart to magnify it.</p>
     </section>
+    </div>
 
+    <div class="tab-pane" id="tab-alltime" role="tabpanel" aria-labelledby="tabbtn-alltime" hidden>
     <!-- LEADERBOARD CARDS -->
     <section class="panel" aria-labelledby="players-title">
       <div class="section-head">
@@ -213,7 +227,18 @@
       </div>
     </section>
 
-    <!-- SHEET CHECK — hidden by app.js when there is nothing to fix -->
+    <!-- ALL-TIME RACE -->
+    <section class="panel" aria-labelledby="race-title">
+      <h2 id="race-title">Cumulative score race <span class="muted small">(all-time)</span></h2>
+      <div class="chart-box" id="box-alltime" role="button" tabindex="0"
+           aria-expanded="false" title="Click to magnify">
+        <canvas id="chart-alltime" aria-label="All-time cumulative score line chart" role="img"></canvas>
+      </div>
+      <p class="muted small chart-hint" id="hint-alltime">Click the chart to magnify it.</p>
+    </section>
+    </div>
+
+    <div class="tab-pane" id="tab-players" role="tabpanel" aria-labelledby="tabbtn-players" hidden>
     <!-- PARTNERSHIPS + RECORDS (written by app.js) -->
     <section class="panel" aria-labelledby="partners-title">
       <div class="section-head">
@@ -247,7 +272,9 @@
       </div>
       <div id="records-grid" class="records-grid"></div>
     </section>
+    </div>
 
+    <!-- SHEET CHECK — hidden by app.js when there is nothing to fix -->
     <section class="panel audit-panel" id="audit-section" aria-labelledby="audit-title" hidden>
       <div class="section-head">
         <h2 id="audit-title">Sheet check</h2>
@@ -270,16 +297,6 @@
         in any total or average on this page. Fix them in the Form responses tab and
         they'll drop off this list on the next refresh.</p>
     </section>
-
-    <!-- ALL-TIME RACE -->
-    <section class="panel" aria-labelledby="race-title">
-      <h2 id="race-title">Cumulative score race <span class="muted small">(all-time)</span></h2>
-      <div class="chart-box" id="box-alltime" role="button" tabindex="0"
-           aria-expanded="false" title="Click to magnify">
-        <canvas id="chart-alltime" aria-label="All-time cumulative score line chart" role="img"></canvas>
-      </div>
-      <p class="muted small chart-hint" id="hint-alltime">Click the chart to magnify it.</p>
-    </section>
   </main>
 
   <footer class="site-footer">
@@ -296,6 +313,7 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script type="module" src="app.js?v=20261018c"></script>
+  <script src="tabs.js?v=20261018d" defer></script>
+  <script type="module" src="app.js?v=20261018d"></script>
 </body>
 </html>
