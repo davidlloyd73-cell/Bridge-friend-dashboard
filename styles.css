@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20261018f");
+@import url("tokens.css?v=20261018g");
 
 /* =============================================================================
    styles.css — Bridge Friends Live Dashboard
@@ -524,3 +524,34 @@ table.standings th .swatch {
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+
+/* ---------- Narrow screens: my newer tables fit without sideways scrolling ---------- */
+@media (max-width: 560px) {
+  #partners-table .partner-bar-col { display: none; }
+  #partners-table th, #partners-table td { padding: 8px 4px; font-size: .82rem; }
+
+  #contracts-table { table-layout: fixed; width: 100%; }
+  #contracts-table th:first-child, #contracts-table td:first-child { width: 20%; }
+  #contracts-table th, #contracts-table td { padding: 8px 2px; font-size: .7rem; overflow-wrap: anywhere; }
+  #contracts-table td .small { font-size: .66rem; }
+
+  #luck-table th:nth-child(1), #luck-table td:nth-child(1),
+  #luck-table th:nth-child(3), #luck-table td:nth-child(3),
+  #luck-table th:nth-child(7), #luck-table td:nth-child(7) { display: none; }
+
+  /* The older four-to-five column tables: tighter padding so every column shows. */
+  #standings-table th, #standings-table td,
+  #standings-2026-table th, #standings-2026-table td,
+  #efficiency-table th, #efficiency-table td { padding: 8px 3px; font-size: .78rem; }
+  /* Tonight's two wide tables: tight cells, wrapping text, so the Result/Points and
+     Total columns stay on screen. */
+  #session-hands-table th, #session-hands-table td,
+  #hcp-table th, #hcp-table td { padding: 8px 3px; font-size: .76rem; white-space: normal; line-height: 1.25; }
+  #hcp-table th .swatch { display: none; }
+
+  /* All-time standings has six columns of big numbers: drop the rank column, the order says it. */
+  #standings-table th:first-child, #standings-table td:first-child { display: none; }
+  #standings-table td { font-size: .76rem; }
+  #standings-table th, #standings-2026-table th, #efficiency-table th { white-space: normal; line-height: 1.15; vertical-align: bottom; }
+  #luck-table th, #luck-table td { padding: 8px 4px; font-size: .78rem; }
+}

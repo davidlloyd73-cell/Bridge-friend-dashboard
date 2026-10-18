@@ -4,11 +4,11 @@
 // always match the main dashboard's round-total column exactly.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261018f";
+import { CONFIG } from "./config.js?v=20261018g";
 import {
   PLAYERS, COLORS, fmtNum, fmtDate, fmtClock, escapeHtml, fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261018f";
+} from "./data.js?v=20261018g";
 
 // Both the target and the round's name come from CONFIG.ROUND — see config.js.
 const TARGET = CONFIG.ROUND.TARGET;
@@ -134,7 +134,7 @@ function renderMilestones(m) {
         // Only the final mark gets a projection; the others are just "not yet".
         return `<td class="num muted">${ms.value === TARGET && pace ? "~" + escapeHtml(fmtDate(pace.date)) : "—"}</td>`;
       }
-      return `<td class="num">${ms.first === p ? "🥇 " : ""}${escapeHtml(hit.label)}</td>`;
+      return `<td class="num">${ms.first === p ? '<span class="ms-gold">🥇 </span>' : ""}${escapeHtml(hit.label)}</td>`;
     }).join("");
     return `<tr><td class="num"><b>${fmtNum(ms.value)}</b></td>${cells}</tr>`;
   }).join("");
