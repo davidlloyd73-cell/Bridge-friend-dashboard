@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261018a";
+import { CONFIG } from "./config.js?v=20261018b";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261018a";
+} from "./data.js?v=20261018b";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -1082,6 +1082,76 @@ function renderRoundLabels() {
   }
 }
 
+/** "Hamish & Caroline", each in their own colour. */
+function pairHtml(a, b) {
+  const one = (p) => `<span style="color:${COLORS[p]};font-weight:600">${escapeHtml(p)}</span>`;
+  return `${one(a)} &amp; ${one(b)}`;
+}
+
+function renderPartnerships(m) {
+  const body = $("#partners-body");
+  if (!body) return;
+  const rows = m.partnerships.filter((q) => q.hands > 0).map((q) => ({
+    ...q, rate: q.wins / q.hands, avg: Math.round(q.points / q.hands),
+  })).sort((x, y) => y.rate - x.rate);
+  const rates = rows.map((q) => q.rate);
+  const hi = Math.max(...rates), lo = Math.min(...rates);
+  body.innerHTML = rows.map((q) => {
+    const cls = hi === lo ? "" : q.rate === hi ? "good" : q.rate === lo ? "bad" : "";
+    const pct = Math.round(q.rate * 100);
+    return `
+      <tr>
+        <td>${pairHtml(q.a, q.b)}</td>
+        <td class="num">${fmtNum(q.hands)}</td>
+        <td class="num"><b class="${cls}">${pct}%</b></td>
+        <td class="partner-bar-col"><span class="partner-bar" aria-hidden="true"><i style="width:${pct}%;background:linear-gradient(90deg,${COLORS[q.a]},${COLORS[q.b]})"></i></span></td>
+        <td class="num">${fmtNum(q.avg)}</td>
+      </tr>`;
+  }).join("") || `<tr><td colspan="5" class="muted">No hands yet.</td></tr>`;
+  const total = Math.round(m.partnerships.reduce((a, q) => a + q.hands, 0) / 2);
+  $("#partners-meta").textContent = `${fmtNum(total)} hands`;
+}
+
+function recordCard(label, big, who, detail) {
+  return `
+    <div class="record">
+      <div class="record-label">${label}</div>
+      <div class="record-big">${big}</div>
+      <div class="record-who">${who}</div>
+      <div class="record-detail muted small">${detail}</div>
+    </div>`;
+}
+
+function renderRecords(m) {
+  const el = $("#records-grid");
+  if (!el) return;
+  const r = m.recordBook;
+  const one = (p) => `<span style="color:${COLORS[p]};font-weight:600">${escapeHtml(p)}</span>`;
+  const cards = [];
+
+  if (r.bigHand) {
+    const h = r.bigHand.hand;
+    const side = r.bigHand.side;
+    cards.push(recordCard("Biggest hand", fmtNum(r.bigHand.score),
+      side.length === 2 ? pairHtml(side[0], side[1]) : side.map(one).join(""),
+      `${contractHtml(h)} &middot; hand ${escapeHtml(h.handNo)}, ${escapeHtml(h.dateLabel)}`));
+  }
+  if (r.bestNight) cards.push(recordCard("Best night", fmtNum(r.bestNight.v), one(r.bestNight.p), escapeHtml(r.bestNight.s.label)));
+  if (r.worstNight) cards.push(recordCard("Worst night", fmtNum(r.worstNight.v), one(r.worstNight.p), escapeHtml(r.worstNight.s.label)));
+  if (r.margin) cards.push(recordCard("Widest win", fmtNum(r.margin.margin), one(r.margin.p),
+    `over ${escapeHtml(r.margin.second)}, ${escapeHtml(r.margin.s.label)}`));
+  if (r.nightStreak) cards.push(recordCard("Winning streak", `${r.nightStreak.n} nights`, one(r.nightStreak.p),
+    r.nightStreak.ongoing ? "still going" : `ended ${escapeHtml(r.nightStreak.endLabel)}`));
+  if (r.madeStreak && r.madeStreak.n) cards.push(recordCard("Contracts in a row", `${r.madeStreak.n} made`, one(r.madeStreak.p),
+    r.madeStreak.ongoing ? "still going" : "as declarer"));
+  if (r.slams && r.slams.n) cards.push(recordCard("Slams made", String(r.slams.n), one(r.slams.p),
+    PLAYERS.filter((p) => p !== r.slams.p && r.slams.all[p]).map((p) => `${escapeHtml(p)} ${r.slams.all[p]}`).join(" &middot; ") || "all-time"));
+  if (r.strongest) cards.push(recordCard("Strongest hand", `${r.strongest.hcp} HCP`, one(r.strongest.p), escapeHtml(r.strongest.at)));
+
+  el.innerHTML = cards.join("");
+  $("#records-meta").textContent = `${m.sessions.length} sessions on record`;
+}
+
 function renderAll(m) {
   renderHeadline(m);
   renderLatestHand(m);
@@ -1094,6 +1164,8 @@ function renderAll(m) {
   renderPlayerCards(m);
   renderTable(m);
   renderEfficiencyTable(m);
+  renderPartnerships(m);
+  renderRecords(m);
   renderMiniRound(m);
   renderCharts(m);
   $("#last-updated").textContent = "Updated " + m.fetchedAt.toLocaleTimeString("en-GB");
@@ -1269,4 +1341,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261018a";
+export { buildModel, parseUKDate } from "./data.js?v=20261018b";

@@ -614,7 +614,7 @@ export function buildModel(rows) {
     const src = [own, ...rows.filter((r) => r.declarer === player)]
       .find((r) => r && r.level > 0 && r.tricksMade > 0);
     const made = src ? src.tricksMade >= src.level + 6 : null;
-    declarerByHand.set(key, { player, made });
+    declarerByHand.set(key, { player, made, level: src ? src.level : 0 });
   });
 
   // For each player: hands declared, and of those with a result logged, how
@@ -632,6 +632,138 @@ export function buildModel(rows) {
     declarerMadeAll[p].of += 1; declarerMadeAll[p].made += made ? 1 : 0;
     if (inSession) { declarerMadeSession[p].of += 1; declarerMadeSession[p].made += made ? 1 : 0; }
   });
+
+
+  // ---- Hands, as four-seat units ------------------------------------------
+  // Partnerships and records both need a hand with its sides sorted out. Only
+  // hands with exactly four rows, one per player, and two seats on each side
+  // are used: anything else (a stray fifth submission, a missing seat) can't
+  // be split into pairs without guessing, and the Sheet check panel is where
+  // those get fixed.
+  const handRows = new Map();
+  records.forEach((rec) => {
+    if (!PLAYERS.includes(rec.player)) return;
+    const key = `${rec.sessionKey}|${rec.hand}`;
+    if (!handRows.has(key)) handRows.set(key, []);
+    handRows.get(key).push(rec);
+  });
+  const wholeHands = [];
+  handRows.forEach((rows, key) => {
+    if (rows.length !== PLAYERS.length) return;
+    if (new Set(rows.map((r) => r.player)).size !== PLAYERS.length) return;
+    const decl = rows.filter((r) => r.wonAuction), def = rows.filter((r) => !r.wonAuction);
+    if (decl.length !== 2 || def.length !== 2) return;
+    wholeHands.push({ key, rows, decl, def, summary: summariseHand(rows, rows[0]) });
+  });
+
+  // ---- Partnerships: every pairing, over every whole hand ------------------
+  // Each hand puts two pairs at the table, so it counts once for each. A pair
+  // WINS a hand when its side scored more than the other; a hand where neither
+  // side scored (passed out) is no one's win and is left out.
+  const partnerships = [];
+  PLAYERS.forEach((a, i) => PLAYERS.slice(i + 1).forEach((b) => {
+    partnerships.push({ a, b, hands: 0, wins: 0, points: 0 });
+  }));
+  const pairOf = (x, y) => partnerships.find((q) => (q.a === x && q.b === y) || (q.a === y && q.b === x));
+  wholeHands.forEach(({ decl, def }) => {
+    const ds = decl[0].score, fs = def[0].score;
+    if (ds === fs) return;
+    [[decl, ds, fs], [def, fs, ds]].forEach(([side, mine, theirs]) => {
+      const pr = pairOf(side[0].player, side[1].player);
+      pr.hands += 1; pr.points += mine; if (mine > theirs) pr.wins += 1;
+    });
+  });
+
+  // ---- Records -------------------------------------------------------------
+  const handsIn = new Map(); // sessionKey -> distinct hands
+  records.forEach((r) => {
+    if (!handsIn.has(r.sessionKey)) handsIn.set(r.sessionKey, new Set());
+    handsIn.get(r.sessionKey).add(r.hand);
+  });
+  // A night still being played would put a half-finished total in "worst",
+  // so the newest session only counts once it has been quiet for a while.
+  const MIN_NIGHT_HANDS = 8, QUIET_MS = 6 * 3600 * 1000;
+  const settled = (s) => (handsIn.get(s.key) || new Set()).size >= MIN_NIGHT_HANDS &&
+    !(s === latestSession && Date.now() - s.lastTsMs < QUIET_MS);
+  const fullNights = sessions.filter((s) => (handsIn.get(s.key) || new Set()).size >= MIN_NIGHT_HANDS);
+  const doneNights = sessions.filter(settled);
+  const holders = (list, val, best) => {
+    let top = null;
+    list.forEach((x) => { if (top === null || (best ? val(x) > val(top) : val(x) < val(top))) top = x; });
+    return top;
+  };
+
+  const records_ = {};
+  // Biggest single hand: the points a side was paid, to whichever side took them.
+  let bigHand = null;
+  wholeHands.forEach(({ summary: h }) => {
+    const declWon = h.declScore >= h.defScore;
+    const score = declWon ? h.declScore : h.defScore;
+    if (!bigHand || score > bigHand.score) {
+      bigHand = {
+        score, hand: h,
+        side: declWon ? [h.declarer, h.partner].filter(Boolean) : h.defenders,
+      };
+    }
+  });
+  records_.bigHand = bigHand;
+
+  // Best and worst nights for one player, and the widest margin of victory.
+  const nightRows = [];
+  fullNights.forEach((s) => PLAYERS.forEach((p) => nightRows.push({ p, s, v: s.perPlayer[p] })));
+  records_.bestNight = holders(nightRows, (x) => x.v, true);
+  records_.worstNight = holders(nightRows.filter((x) => settled(x.s)), (x) => x.v, false);
+  let margin = null;
+  doneNights.forEach((s) => {
+    const v = PLAYERS.map((p) => [p, s.perPlayer[p]]).sort((x, y) => y[1] - x[1]);
+    const m2 = v[0][1] - v[1][1];
+    if (!margin || m2 > margin.margin) margin = { margin: m2, p: v[0][0], s, second: v[1][0] };
+  });
+  records_.margin = margin;
+
+  // Longest run of outright nightly wins. A shared top score breaks the run:
+  // nobody won that night.
+  const winnerOf = (s) => {
+    const v = PLAYERS.map((p) => [p, s.perPlayer[p]]).sort((x, y) => y[1] - x[1]);
+    return v[0][1] > v[1][1] ? v[0][0] : null;
+  };
+  let nightStreak = null, runP = null, run = 0;
+  doneNights.forEach((s, i) => {
+    const w = winnerOf(s);
+    run = w && w === runP ? run + 1 : (w ? 1 : 0);
+    runP = w;
+    if (w && (!nightStreak || run > nightStreak.n)) nightStreak = { p: w, n: run, endLabel: s.label, ongoing: false };
+    if (nightStreak && nightStreak.p === w && nightStreak.endLabel === s.label) {
+      nightStreak.ongoing = i === doneNights.length - 1;
+    }
+  });
+  records_.nightStreak = nightStreak;
+
+  // Longest run of contracts made, per declarer, in the order they were played.
+  const played = [...declarerByHand.entries()].map(([key, v]) => {
+    const [sk, hand] = [key.slice(0, key.indexOf("|")), key.slice(key.indexOf("|") + 1)];
+    return { sk, hand: parseInt(hand, 10), ...v };
+  }).sort((x, y) => (x.sk < y.sk ? -1 : x.sk > y.sk ? 1 : x.hand - y.hand));
+  const runNow = {}, runBest = {};
+  PLAYERS.forEach((p) => { runNow[p] = 0; runBest[p] = 0; });
+  played.forEach(({ player: p, made }) => {
+    if (made === null) return;
+    runNow[p] = made ? runNow[p] + 1 : 0;
+    runBest[p] = Math.max(runBest[p], runNow[p]);
+  });
+  const madeLeader = PLAYERS.reduce((a, b) => (runBest[b] > runBest[a] ? b : a));
+  records_.madeStreak = { p: madeLeader, n: runBest[madeLeader], ongoing: runNow[madeLeader] === runBest[madeLeader] };
+
+  // Slams (level 6 or 7) made, per declarer.
+  const slams = {}; PLAYERS.forEach((p) => (slams[p] = 0));
+  played.forEach(({ player: p, made, level }) => { if (made && level >= 6) slams[p] += 1; });
+  const slamLeader = PLAYERS.reduce((a, b) => (slams[b] > slams[a] ? b : a));
+  records_.slams = { p: slamLeader, n: slams[slamLeader], all: slams };
+
+  // The strongest hand ever dealt, from the same deduplicated HCP the panel uses.
+  const dealt = PLAYERS.filter((p) => hcpStats[p].max !== null)
+    .reduce((a, b) => (a === null || hcpStats[b].max > hcpStats[a].max ? b : a), null);
+  records_.strongest = dealt ? { p: dealt, hcp: hcpStats[dealt].max, at: hcpStats[dealt].maxAt } : null;
 
   // ---- Sheet audit: every hand in the record that doesn't look right -------
   // Three faults, all fixable in the Google Sheet:
@@ -679,6 +811,7 @@ export function buildModel(rows) {
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
     efficiencySession, declarerAll, declarerSession, declarerMadeAll, declarerMadeSession,
+    partnerships, recordBook: records_,
     handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,
