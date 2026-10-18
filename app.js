@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261010b";
+import { CONFIG } from "./config.js?v=20261018a";
 import {
   PLAYERS, COLORS, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261010b";
+} from "./data.js?v=20261018a";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -31,6 +31,9 @@ let chartRound = null;
 // scales a 6%-of-height gap to 12%.
 const ZOOM_SESSIONS = 10;
 const chartZoom = { alltime: false, round: false };
+
+// How many of a player's latest sessions the form sparkline shows.
+const FORM_SESSIONS = 8;
 
 // ---- Sort state for the standings tables ----
 let sortState = { key: "grand", dir: "desc" };
@@ -74,6 +77,91 @@ function resultHtmlFor(h) {
   return h.resultDiff >= 0
     ? `<span class="lh-result-made">Made${h.resultDiff > 0 ? " +" + h.resultDiff : ""}</span>`
     : `<span class="lh-result-down">Down ${Math.abs(h.resultDiff)}</span>`;
+}
+
+// ---- Headline strip + form sparklines -------------------------------------
+
+/**
+ * Names for the front of a sentence: "Hamish", "Hamish and Caroline",
+ * "Hamish, Caroline and David".
+ */
+function nameList(names) {
+  const n = names.map(escapeHtml);
+  return n.length < 2 ? n.join("") : `${n.slice(0, -1).join(", ")} and ${n[n.length - 1]}`;
+}
+
+/** Who is out in front on `totals`, and by how much. Null when nobody has scored. */
+function leadOf(totals) {
+  const ranked = [...PLAYERS].sort((a, b) => totals[b] - totals[a]);
+  const top = totals[ranked[0]];
+  if (top === 0) return null;
+  const leaders = ranked.filter((p) => totals[p] === top);
+  const next = ranked.find((p) => totals[p] < top);
+  return { leaders, top, margin: next === undefined ? 0 : top - totals[next] };
+}
+
+function headlineItem(label, body) {
+  return `<div class="headline-item"><span class="headline-label">${label}</span><span class="headline-body">${body}</span></div>`;
+}
+
+function leadSentence(lead) {
+  const who = nameList(lead.leaders);
+  if (lead.leaders.length > 1) return `<b>${who}</b> are level at the top on <b>${fmtNum(lead.top)}</b>`;
+  return lead.margin
+    ? `<b>${who}</b> leads by <b>${fmtNum(lead.margin)}</b>`
+    : `<b>${who}</b> leads on <b>${fmtNum(lead.top)}</b>`;
+}
+
+function renderHeadline(m) {
+  const el = $("#headline");
+  if (!el) return;
+  const items = [];
+
+  const tonight = m.latestSession ? leadOf(m.latestSession.perPlayer) : null;
+  items.push(headlineItem("Tonight",
+    tonight ? leadSentence(tonight) : '<span class="muted">No scores yet</span>'));
+
+  const round = leadOf(m.roundTotal);
+  items.push(headlineItem(ROUND.LABEL,
+    round ? leadSentence(round) : '<span class="muted">Not started</span>'));
+
+  if (round) {
+    const pct = Math.min(100, Math.round((round.top / ROUND.TARGET) * 100));
+    items.push(headlineItem("To the finish",
+      `<b>${fmtNum(round.top)}</b> of ${fmtNum(ROUND.TARGET)} <span class="muted">(${pct}%)</span>`));
+  }
+  el.innerHTML = items.join("");
+}
+
+/**
+ * A player's last few session scores as a tiny line, with a dashed zero line
+ * so a run of losing nights reads as sitting below it. The final point is
+ * dotted: that is "how they did last time". Fewer than two sessions is not a
+ * trend, so draws nothing.
+ */
+function sparkline(scores, color) {
+  const pts = scores.slice(-FORM_SESSIONS);
+  if (pts.length < 2) return "";
+  const W = 100, H = 28, pad = 3;
+  const lo = Math.min(0, ...pts), hi = Math.max(0, ...pts);
+  const span = hi - lo || 1;
+  const x = (i) => pad + (i * (W - 2 * pad)) / (pts.length - 1);
+  const y = (v) => pad + ((hi - v) * (H - 2 * pad)) / span;
+  const line = pts.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const last = pts.length - 1;
+  const desc = `Last ${pts.length} sessions: ${pts.map(fmtNum).join(", ")}`;
+  return `
+    <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(desc)}">
+      <title>${escapeHtml(desc)}</title>
+      <line class="spark-zero" x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>
+      <polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+      <circle cx="${x(last).toFixed(1)}" cy="${y(pts[last]).toFixed(1)}" r="2.2" fill="${color}"/>
+    </svg>`;
+}
+
+function formHtml(sessions, p) {
+  const svg = sparkline(sessions.map((s) => s.perPlayer[p]), COLORS[p]);
+  return svg ? `<div class="form" title="Session scores, oldest to newest">${svg}<span class="form-label">Form</span></div>` : "";
 }
 
 function renderLatestHand(m) {
@@ -302,6 +390,7 @@ function renderPlayerCards(m) {
         <div class="name"><span class="swatch"></span>${escapeHtml(p)}</div>
         <div class="big">${fmtNum(m.grand[p])}</div>
         <div class="sub"><span>This session: <b>${fmtNum(sess)}</b></span><span>Eff: <b>${m.efficiency[p]}</b></span></div>
+        ${formHtml(m.sessions, p)}
       </div>`;
   }).join("");
 
@@ -370,6 +459,7 @@ function renderRoundCards(m) {
         <div class="name"><span class="swatch"></span>${escapeHtml(p)}</div>
         <div class="big">${fmtNum(m.roundTotal[p])}</div>
         <div class="sub"><span>This session: <b>${fmtNum(sess)}</b></span><span>Eff: <b>${m.efficiencyRound[p]}</b></span></div>
+        ${formHtml(m.sessionsRound, p)}
       </div>`;
   }).join("");
 
@@ -993,6 +1083,7 @@ function renderRoundLabels() {
 }
 
 function renderAll(m) {
+  renderHeadline(m);
   renderLatestHand(m);
   renderThisSession(m);
   renderDeclarer(m);
@@ -1178,4 +1269,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261010b";
+export { buildModel, parseUKDate } from "./data.js?v=20261018a";

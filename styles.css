@@ -227,6 +227,26 @@ main {
 .pcard .medal { position: absolute; top: 10px; right: 12px; font-size: 1.25rem; }
 .pcard.leader { box-shadow: 0 0 0 2px var(--pc) inset, var(--shadow); }
 
+/* ---------- Headline strip ---------- */
+.headline {
+  display: flex; flex-wrap: wrap; gap: 8px 28px;
+  padding: 12px 18px; margin-bottom: 18px;
+  background: var(--navy-800); border: 1px solid var(--line);
+  border-left: 4px solid var(--gold); border-radius: 12px;
+}
+.headline:empty { display: none; }
+.headline-item { display: flex; flex-direction: column; gap: 2px; font-size: 1rem; }
+.headline-item b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; }
+.headline-label {
+  font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+}
+
+/* ---------- Form sparkline on a player card ---------- */
+.pcard .form { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.pcard .spark { flex: 1; min-width: 0; height: 28px; overflow: visible; }
+.pcard .spark-zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; opacity: .6; vector-effect: non-scaling-stroke; }
+.pcard .form-label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
 /* ---------- "This session" cards ----------
    The same card as the round standings, with the night's figures on it. */
 #session-totals + .session-cards-note { margin: -6px 0 14px; }
