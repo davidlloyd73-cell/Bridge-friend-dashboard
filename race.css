@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20261018f");
+@import url("tokens.css?v=20261018g");
 
 /* =============================================================================
    race.css — "Race to 50,000" live page
@@ -319,7 +319,15 @@ main {
 }
 #milestones-table th { font-weight: 600; font-size: .9rem; color: var(--ink-soft); }
 #milestones-table th:first-child, #milestones-table td:first-child { width: 22%; text-align: left; }
+.milestones-panel .table-wrap { overflow-x: auto; }
 @media (max-width: 560px) {
-  #milestones-table th, #milestones-table td { font-size: .78rem; padding: 8px 3px; }
+  /* Five columns in ~320px: let the dates wrap ("21 Aug" over "26") rather than
+     spill into the next column, and put the medal on its own line. */
+  #milestones-table th, #milestones-table td {
+    font-family: var(--font-body); font-size: .74rem; padding: 8px 2px; white-space: normal; line-height: 1.25;
+  }
+  #milestones-table td:first-child { font-family: var(--font-mono); }
+  #milestones-table th:first-child, #milestones-table td:first-child { width: 19%; }
   #milestones-table .swatch { display: none; }
+  .ms-gold { display: block; }
 }

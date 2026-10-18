@@ -5,14 +5,14 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { celebrate } from "./celebrations.js?v=20261018f";
-import { buildRecap } from "./recap.js?v=20261018f";
-import { CONFIG } from "./config.js?v=20261018f";
+import { celebrate } from "./celebrations.js?v=20261018g";
+import { buildRecap } from "./recap.js?v=20261018g";
+import { CONFIG } from "./config.js?v=20261018g";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261018f";
+} from "./data.js?v=20261018g";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -1494,4 +1494,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261018f";
+export { buildModel, parseUKDate } from "./data.js?v=20261018g";
