@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Race to 50,000 — Bridge Friends</title>
-  <script src="theme.js?v=20261018c"></script>
+  <script src="theme.js?v=20261018e"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Fraunces (display) · Spectral (body) · IBM Plex Mono (all numerals).
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="race.css?v=20261018c" />
+  <link rel="stylesheet" href="race.css?v=20261018e" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
 </head>
 <body>
@@ -41,6 +41,19 @@
       </div>
     </section>
 
+    <section class="panel milestones-panel" aria-labelledby="milestones-title">
+      <h2 id="milestones-title">Milestones</h2>
+      <div class="table-wrap">
+        <table class="standings" id="milestones-table">
+          <thead id="milestones-head"></thead>
+          <tbody id="milestones-body"></tbody>
+        </table>
+      </div>
+      <p class="muted small">The session on which each player&rsquo;s running total first
+        reached the mark; 🥇 goes to whoever got there first. &ldquo;At this pace&rdquo;
+        dates are a straight-line guess from the round so far, so treat them as a guide.</p>
+    </section>
+
     <section class="panel glory-panel" aria-labelledby="glory-title">
       <h2 id="glory-title">Points to glory</h2>
       <div id="points-to-glory" class="glory-strip"></div>
@@ -60,6 +73,6 @@
        main dashboard. The ?v= query is bumped on each code change. Bump the SAME
        value on the import specifiers inside app.js / race.js / data.js too, or
        the browser keeps serving cached copies of data.js and config.js. -->
-  <script type="module" src="race.js?v=20261018c"></script>
+  <script type="module" src="race.js?v=20261018e"></script>
 </body>
 </html>

@@ -4,11 +4,11 @@
 // always match the main dashboard's round-total column exactly.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261018c";
+import { CONFIG } from "./config.js?v=20261018e";
 import {
   PLAYERS, COLORS, fmtNum, fmtDate, fmtClock, escapeHtml, fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261018c";
+} from "./data.js?v=20261018e";
 
 // Both the target and the round's name come from CONFIG.ROUND — see config.js.
 const TARGET = CONFIG.ROUND.TARGET;
@@ -48,7 +48,7 @@ function buildRace(m) {
   const leader = ranked[0];
   const leaderTotal = totals[leader];
 
-  return { totals, ranked, raceOver, winner, winners, leader, leaderTotal };
+  return { totals, ranked, raceOver, winner, winners, leader, leaderTotal, pace: m.pace };
 }
 
 // =============================================================================
@@ -104,6 +104,42 @@ function renderBanner(race) {
     ${extra}`;
 }
 
+/** Faint marks on the track at each 10,000, so progress reads against something. */
+function ticksHtml() {
+  const out = [];
+  for (let v = 10000; v < TARGET; v += 10000) {
+    out.push(`<span class="lane-tick" style="left:${(v / TARGET) * 100}%" aria-hidden="true"></span>`);
+  }
+  return out.join("");
+}
+
+function paceHtml(player, race) {
+  const pace = race.pace && race.pace[player];
+  if (race.raceOver || !pace) return "";
+  const when = pace.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" });
+  return ` <span class="lane-pace">At this pace: home around <b>${escapeHtml(when)}</b>, ` +
+    `${pace.sessionsLeft} session${pace.sessionsLeft === 1 ? "" : "s"} to go.</span>`;
+}
+
+function renderMilestones(m) {
+  const head = $("#milestones-head"), body = $("#milestones-body");
+  if (!head || !body) return;
+  head.innerHTML = `<tr><th class="num">Mark</th>${PLAYERS.map((p) =>
+    `<th class="num"><span class="swatch" style="background:${COLORS[p]}"></span>${escapeHtml(p)}</th>`).join("")}</tr>`;
+  body.innerHTML = m.milestones.map((ms) => {
+    const cells = PLAYERS.map((p) => {
+      const hit = ms.per[p];
+      if (!hit) {
+        const pace = m.pace && m.pace[p];
+        // Only the final mark gets a projection; the others are just "not yet".
+        return `<td class="num muted">${ms.value === TARGET && pace ? "~" + escapeHtml(fmtDate(pace.date)) : "—"}</td>`;
+      }
+      return `<td class="num">${ms.first === p ? "🥇 " : ""}${escapeHtml(hit.label)}</td>`;
+    }).join("");
+    return `<tr><td class="num"><b>${fmtNum(ms.value)}</b></td>${cells}</tr>`;
+  }).join("");
+}
+
 function renderTrack(race) {
   const el = $("#track");
   el.innerHTML = race.ranked.map((p) => {
@@ -120,11 +156,12 @@ function renderTrack(race) {
           <span class="lane-total">${fmtNum(total)} <span class="lane-togo">${toGo > 0 ? `· ${fmtNum(toGo)} to go` : "· HOME"}</span></span>
         </div>
         <div class="lane-bar-wrap">
+          ${ticksHtml()}
           <div class="finish-line"></div>
           <div class="lane-bar" style="width:${pct}%"></div>
           <div class="lane-runner" style="left:${pct}%">🏃</div>
         </div>
-        <div class="lane-status">${statusLine(p, race)}</div>
+        <div class="lane-status">${statusLine(p, race)}${paceHtml(p, race)}</div>
       </div>`;
   }).join("");
 }
@@ -178,6 +215,7 @@ function renderAll(m) {
   renderBanner(race);
   renderTrack(race);
   renderStrip(race);
+  renderMilestones(m);
   return race;
 }
 
