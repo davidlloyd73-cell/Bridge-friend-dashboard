@@ -671,7 +671,10 @@ export function buildModel(rows) {
     const src = [own, ...rows.filter((r) => r.declarer === player)]
       .find((r) => r && r.level > 0 && r.tricksMade > 0);
     const made = src ? src.tricksMade >= src.level + 6 : null;
-    declarerByHand.set(key, { player, made, level: src ? src.level : 0 });
+    declarerByHand.set(key, {
+      player, made,
+      level: src ? src.level : 0, suit: src ? src.suit : "", doubled: src ? src.doubled : "",
+    });
   });
 
   // For each player: hands declared, and of those with a result logged, how
@@ -730,6 +733,69 @@ export function buildModel(rows) {
       pr.hands += 1; pr.points += mine; if (mine > theirs) pr.wins += 1;
     });
   });
+
+
+  // ---- Contracts: how each kind of contract fares ----------------------------
+  // Only contracts with a result logged count (made is null otherwise). Game is
+  // the bonus threshold: 3NT, 4 of a major, 5 of a minor; below that is a
+  // part-score; 6 is a small slam and 7 a grand slam.
+  const CLASSES = ["part", "game", "slam", "grand"];
+  const classOf = (level, suit) => {
+    if (level >= 7) return "grand";
+    if (level === 6) return "slam";
+    const s = String(suit).toLowerCase();
+    const major = s === "hearts" || s === "spades";
+    const nt = s === "no trumps" || s === "notrumps" || s === "nt";
+    return (nt ? level >= 3 : major ? level >= 4 : level >= 5) ? "game" : "part";
+  };
+  const tally = () => {
+    const t = { doubled: { of: 0, made: 0 }, suits: {} };
+    CLASSES.forEach((c) => (t[c] = { of: 0, made: 0 }));
+    return t;
+  };
+  const contracts = { all: tally(), byPlayer: {} };
+  PLAYERS.forEach((p) => (contracts.byPlayer[p] = tally()));
+  declarerByHand.forEach(({ player: p, made, level, suit, doubled }) => {
+    if (made === null || !(level > 0)) return;
+    const c = classOf(level, suit);
+    const isDoubled = /^(re)?double/i.test(String(doubled || "").trim());
+    [contracts.all, contracts.byPlayer[p]].forEach((t) => {
+      t[c].of += 1; t[c].made += made ? 1 : 0;
+      if (isDoubled) { t.doubled.of += 1; t.doubled.made += made ? 1 : 0; }
+    });
+    const den = String(suit).toLowerCase();
+    contracts.byPlayer[p].suits[den] = (contracts.byPlayer[p].suits[den] || 0) + 1;
+  });
+
+  // ---- Luck versus skill -----------------------------------------------------
+  // What a hand with this many HCP typically scores, over everyone's rows, and
+  // how each player's actual scores compare. Above expected means getting more
+  // out of the cards than the average player does with the same strength.
+  // Their partner's cards matter too and aren't known per seat, so this is a
+  // guide, not a verdict. HCP is banded in twos (<=5, 6-7, ... >=16).
+  const bandOf = (h) => Math.min(8, Math.max(2, Math.floor(h / 2)));
+  const bandSum = {}, bandN = {};
+  records.forEach((r) => {
+    if (!r.hasHcp || !PLAYERS.includes(r.player)) return;
+    const b = bandOf(r.hcp);
+    bandSum[b] = (bandSum[b] || 0) + r.score;
+    bandN[b] = (bandN[b] || 0) + 1;
+  });
+  const luck = {};
+  PLAYERS.forEach((p) => (luck[p] = { hands: 0, hcp: 0, actual: 0, expected: 0 }));
+  records.forEach((r) => {
+    if (!r.hasHcp || !luck[r.player]) return;
+    const l = luck[r.player], b = bandOf(r.hcp);
+    l.hands += 1; l.hcp += r.hcp; l.actual += r.score; l.expected += bandSum[b] / bandN[b];
+  });
+  PLAYERS.forEach((p) => {
+    const l = luck[p];
+    l.avgHcp = l.hands ? l.hcp / l.hands : 0;
+    l.diff = l.actual - l.expected;
+    l.diffPerHand = l.hands ? l.diff / l.hands : 0;
+  });
+  const luckBands = Object.keys(bandN).map(Number).sort((a, b) => a - b)
+    .map((b) => ({ band: b, hands: bandN[b], avg: bandSum[b] / bandN[b] }));
 
   // ---- Records -------------------------------------------------------------
   const handsIn = new Map(); // sessionKey -> distinct hands
@@ -868,7 +934,7 @@ export function buildModel(rows) {
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
     efficiencySession, declarerAll, declarerSession, declarerMadeAll, declarerMadeSession,
-    partnerships, recordBook: records_, pace, milestones,
+    partnerships, recordBook: records_, pace, milestones, contracts, luck, luckBands,
     handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,

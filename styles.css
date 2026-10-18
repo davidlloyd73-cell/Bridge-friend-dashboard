@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20261018e");
+@import url("tokens.css?v=20261018f");
 
 /* =============================================================================
    styles.css — Bridge Friends Live Dashboard
@@ -497,3 +497,30 @@ table.standings th .swatch {
 }
 .audit-toggle:hover { color: var(--ink); }
 .audit-toggle:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+/* ---------- Contracts and Luck ---------- */
+#contracts-table td.good b, #luck-table b.good { color: var(--good); }
+#contracts-table td.bad b, #luck-table b.bad { color: var(--bad); }
+#contracts-table th .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+@media (max-width: 560px) {
+  #contracts-table th, #contracts-table td { font-size: .78rem; padding: 8px 4px; }
+  #contracts-table th .swatch { display: none; }
+  #contracts-table .small { display: block; }
+}
+
+/* ---------- Celebration toast ---------- */
+.toast {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+  z-index: 50; width: min(92vw, 460px); cursor: pointer;
+  background: var(--navy-800); color: var(--ink);
+  border: 1px solid var(--gold); border-left: 5px solid var(--gold); border-radius: 12px;
+  padding: 10px 16px; box-shadow: var(--shadow), 0 10px 30px rgba(0, 0, 0, .25);
+  animation: toast-in 380ms ease-out;
+}
+.toast[hidden] { display: none; }
+.toast p { margin: 4px 0; font-weight: 600; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 16px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }

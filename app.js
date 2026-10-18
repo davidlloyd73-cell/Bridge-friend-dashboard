@@ -5,13 +5,14 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { buildRecap } from "./recap.js?v=20261018e";
-import { CONFIG } from "./config.js?v=20261018e";
+import { celebrate } from "./celebrations.js?v=20261018f";
+import { buildRecap } from "./recap.js?v=20261018f";
+import { CONFIG } from "./config.js?v=20261018f";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261018e";
+} from "./data.js?v=20261018f";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -1183,6 +1184,70 @@ window.addEventListener("tabchange", () => {
   [chartAllTime, chartRound].forEach((c) => { if (c) c.resize(); });
 });
 
+const CONTRACT_ROWS = [
+  ["part", "Part-score"], ["game", "Game"], ["slam", "Small slam"], ["grand", "Grand slam"], ["doubled", "Doubled"],
+];
+
+/**
+ * How each kind of contract fares: made out of bid, overall and per declarer.
+ * A rate is marked best (green) / worst (red) among the players only where
+ * at least five of that kind were declared — a 1-from-1 is not a record.
+ */
+function renderContracts(m) {
+  const head = $("#contracts-head"), body = $("#contracts-body");
+  if (!head || !body) return;
+  head.innerHTML = `<tr><th>Contract</th><th class="num">Everyone</th>${PLAYERS.map((p) =>
+    `<th class="num"><span class="swatch" style="background:${COLORS[p]}"></span>${escapeHtml(p)}</th>`).join("")}</tr>`;
+  const cell = (t) => t.of
+    ? `<b>${Math.round((t.made / t.of) * 100)}%</b> <span class="muted small">${t.made}/${t.of}</span>`
+    : `<span class="muted">—</span>`;
+  body.innerHTML = CONTRACT_ROWS.map(([key, label]) => {
+    const rates = PLAYERS.map((p) => m.contracts.byPlayer[p][key]).map((t) => (t.of >= 5 ? t.made / t.of : null));
+    const known = rates.filter((r) => r !== null);
+    const hi = Math.max(...known), lo = Math.min(...known);
+    const cells = PLAYERS.map((p, i) => {
+      const cls = known.length < 3 || hi === lo || rates[i] === null ? "" : rates[i] === hi ? "good" : rates[i] === lo ? "bad" : "";
+      return `<td class="num ${cls}">${cell(m.contracts.byPlayer[p][key])}</td>`;
+    }).join("");
+    return `<tr><td>${label}</td><td class="num">${cell(m.contracts.all[key])}</td>${cells}</tr>`;
+  }).join("");
+  // Each declarer's most-declared denomination.
+  const fav = PLAYERS.map((p) => {
+    const s = m.contracts.byPlayer[p].suits;
+    const top = Object.keys(s).sort((x, y) => s[y] - s[x])[0];
+    if (!top) return `<td class="num muted">—</td>`;
+    const { sym, red } = suitDisplay(top);
+    return `<td class="num"><span class="${red ? "lh-suit-red" : ""}">${escapeHtml(sym)}</span> <span class="muted small">${s[top]}</span></td>`;
+  }).join("");
+  body.innerHTML += `<tr><td>Favourite</td><td class="num muted">—</td>${fav}</tr>`;
+}
+
+/**
+ * Luck versus skill. Expected points are what a hand of that strength scores
+ * on average across everyone's rows; above expected means more got out of the
+ * cards than the average player with the same HCP.
+ */
+function renderLuck(m) {
+  const body = $("#luck-body");
+  if (!body) return;
+  const rows = PLAYERS.map((p) => ({ p, ...m.luck[p] })).sort((x, y) => y.diffPerHand - x.diffPerHand);
+  const sign = (n) => (n > 0 ? "+" : n < 0 ? "−" : "") + fmtNum(Math.abs(n));
+  body.innerHTML = rows.map((r, i) => {
+    const per = r.hands ? r.actual / r.hands : 0, exp = r.hands ? r.expected / r.hands : 0;
+    const cls = Math.round(r.diffPerHand) > 0 ? "good" : Math.round(r.diffPerHand) < 0 ? "bad" : "";
+    return `
+      <tr>
+        <td class="num">${i + 1}</td>
+        <td class="player-cell"><span class="swatch" style="background:${COLORS[r.p]}"></span>${escapeHtml(r.p)}</td>
+        <td class="num">${r.avgHcp.toFixed(1)}</td>
+        <td class="num">${fmtNum(exp)}</td>
+        <td class="num">${fmtNum(per)}</td>
+        <td class="num"><b class="${cls}">${sign(r.diffPerHand)}</b></td>
+        <td class="num muted">${sign(r.diff)}</td>
+      </tr>`;
+  }).join("");
+}
+
 function renderAll(m) {
   renderHeadline(m);
   renderLatestHand(m);
@@ -1196,6 +1261,8 @@ function renderAll(m) {
   renderTable(m);
   renderEfficiencyTable(m);
   renderPartnerships(m);
+  renderContracts(m);
+  renderLuck(m);
   renderRecords(m);
   renderMiniRound(m);
   renderCharts(m);
@@ -1265,8 +1332,10 @@ async function refresh({ manual = false } = {}) {
     if (signature !== lastSignature || manual) {
       const model = buildModel(rows);
       lastSignature = signature;
+      const before = lastGoodModel;   // null on first load: nothing to celebrate yet
       lastGoodModel = model;
       renderAll(model);
+      showToast(celebrate(before, model));
       if (!verificationLogged) { logVerification(model); verificationLogged = true; }
     } else {
       // Data unchanged — just refresh the "updated" stamp.
@@ -1299,6 +1368,26 @@ function startPolling() {
 // =============================================================================
 // Wire up the page
 // =============================================================================
+let toastTimer = null;
+/** A short-lived banner for good news. Click it, or wait, and it goes away. */
+function showToast(messages) {
+  if (!messages.length) return;
+  let el = $("#toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "toast";
+    el.className = "toast";
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    el.addEventListener("click", () => { el.hidden = true; });
+    document.body.appendChild(el);
+  }
+  el.innerHTML = messages.map((t) => `<p>${escapeHtml(t)}</p>`).join("");
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 14000);
+}
+
 /** Copy text to the clipboard; falls back to a hidden textarea where the async API is blocked. */
 async function copyText(text) {
   try {
@@ -1405,4 +1494,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261018e";
+export { buildModel, parseUKDate } from "./data.js?v=20261018f";
