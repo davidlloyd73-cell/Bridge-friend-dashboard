@@ -55,6 +55,9 @@
   /* The groove behind a race lane: darker than the panel it sits on. */
   --track-bg:  #0E2338;
 
+  /* The sticky header fades from the page ground to a translucent version of it. */
+  --header-fade: color-mix(in srgb, var(--navy-900) 88%, transparent);
+
   /* ---- Type ------------------------------------------------------------- */
   /* Each keeps a system fallback so the page is readable before (or without)
      the webfonts. */
@@ -62,6 +65,56 @@
   --font-body:    "Spectral", Georgia, "Times New Roman", serif;
   --font-mono:    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+
+/* =============================================================================
+   LIGHT THEME.  theme.js sets data-theme="light" or "dark" on <html> (from the
+   saved choice, else the device setting). The token NAMES stay as they are —
+   --navy-900 is simply "the page ground" and --navy-800 "a panel" — so no rule
+   elsewhere needs to know which theme is on.
+
+   CONTRAST: text tokens clear WCAG AA (4.5:1) on the raised surface
+   (--navy-700, the darkest ground text sits on), hence the deep gold, teal and
+   player colours: the dark-theme hues are too pale on paper.
+   ============================================================================= */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --navy-900: #F3EFE6;   /* page ground */
+  --navy-800: #FFFFFF;   /* panels */
+  --navy-700: #EFEADD;   /* raised surfaces / hover */
+
+  --teal:     #0B6F68;
+  --teal-dim: #2AA198;
+  --gold:     #8A5F0B;
+  --gold-dim: #C99A3C;
+
+  --ink:      #14263A;
+  --ink-soft: #3B4B5E;
+  --muted:    #5A6878;
+
+  --line:     #D8D0BC;
+  --good:     #1B6E3E;
+  --bad:      #B03A3A;
+
+  --c-david:    #8A5F0B;
+  --c-vivienne: #0B6F68;
+  --c-hamish:   #9E4A0B;
+  --c-caroline: #6B4496;
+  --c-unknown:  #5A6878;
+
+  --shadow:    0 1px 2px rgba(20, 38, 58, .10), 0 6px 16px rgba(20, 38, 58, .08);
+  --track-bg:  #E4DECF;
+}
+:root[data-theme="dark"] { color-scheme: dark; }
+
+/* The light/dark switch theme.js puts in the header. */
+.theme-toggle {
+  font: inherit; font-size: .95rem; line-height: 1;
+  padding: 5px 9px; border-radius: 999px; cursor: pointer;
+  color: var(--ink); background: var(--navy-700); border: 1px solid var(--line);
+}
+.theme-toggle:hover { border-color: var(--teal-dim); }
+.theme-toggle:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 
 /* Every numeral in the UI wears the mono face with aligned columns. Scoped to
    td (and an explicit .mono opt-in) so that <th class="num"> keeps the body

@@ -5,12 +5,12 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261018b";
+import { CONFIG } from "./config.js?v=20261018c";
 import {
-  PLAYERS, COLORS, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
+  PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261018b";
+} from "./data.js?v=20261018c";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -154,8 +154,8 @@ function sparkline(scores, color) {
     <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(desc)}">
       <title>${escapeHtml(desc)}</title>
       <line class="spark-zero" x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>
-      <polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-      <circle cx="${x(last).toFixed(1)}" cy="${y(pts[last]).toFixed(1)}" r="2.2" fill="${color}"/>
+      <polyline points="${line}" fill="none" style="stroke:${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+      <circle cx="${x(last).toFixed(1)}" cy="${y(pts[last]).toFixed(1)}" r="2.2" style="fill:${color}"/>
     </svg>`;
 }
 
@@ -764,8 +764,8 @@ function lineDatasets(series) {
   return PLAYERS.map((p) => ({
     label: p,
     data: series[p],
-    borderColor: COLORS[p],
-    backgroundColor: COLORS[p],
+    borderColor: colorHex(p),
+    backgroundColor: colorHex(p),
     borderWidth: 2.5,
     pointRadius: 2,
     pointHoverRadius: 5,
@@ -1152,6 +1152,13 @@ function renderRecords(m) {
   $("#records-meta").textContent = `${m.sessions.length} sessions on record`;
 }
 
+// The charts bake their colours in when built, so a theme change rebuilds them.
+window.addEventListener("themechange", () => {
+  if (chartAllTime) { chartAllTime.destroy(); chartAllTime = null; }
+  if (chartRound) { chartRound.destroy(); chartRound = null; }
+  if (lastGoodModel) renderCharts(lastGoodModel);
+});
+
 function renderAll(m) {
   renderHeadline(m);
   renderLatestHand(m);
@@ -1341,4 +1348,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261018b";
+export { buildModel, parseUKDate } from "./data.js?v=20261018c";
