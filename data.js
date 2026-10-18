@@ -6,18 +6,32 @@
 
 import { CONFIG } from "./config.js?v=20260822c";
 
-// ---- Fixed players & their signature colours (hex must match tokens.css) ----
-// These are the same five values as --c-david … --c-unknown in tokens.css.
-// Chart.js needs a literal hex (it draws to canvas and can't read a CSS custom
-// property), so the pair is kept in sync by hand — change both or neither.
+// ---- Fixed players & their signature colours -------------------------------
+// COLORS holds CSS custom-property references, not hex, so every inline style
+// follows the light/dark theme with no re-render. The actual values live in
+// tokens.css (--c-david … --c-unknown), once per theme. Chart.js draws to a
+// canvas and can't read a custom property, so charts call colorHex() instead,
+// which resolves the live value (and falls back to the dark-theme hex).
 export const PLAYERS = CONFIG.PLAYERS; // ["David","Vivienne","Hamish","Caroline"]
 export const COLORS = {
-  David: "#D4A24C",    // gold
-  Vivienne: "#2AA198", // teal
-  Hamish: "#E08A4B",   // amber
-  Caroline: "#A98BC7", // violet
-  Unknown: "#8898AC",  // slate
+  David: "var(--c-david)",
+  Vivienne: "var(--c-vivienne)",
+  Hamish: "var(--c-hamish)",
+  Caroline: "var(--c-caroline)",
+  Unknown: "var(--c-unknown)",
 };
+const DARK_HEX = {
+  David: "#D4A24C", Vivienne: "#2AA198", Hamish: "#E08A4B", Caroline: "#A98BC7", Unknown: "#8898AC",
+};
+/** The player's colour as a literal hex for the current theme (for canvas drawing). */
+export function colorHex(name) {
+  const key = DARK_HEX[name] ? name : "Unknown";
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(`--c-${key.toLowerCase()}`).trim();
+    if (v) return v;
+  } catch (e) { /* no DOM (tests): fall through */ }
+  return DARK_HEX[key];
+}
 
 // Column indices for the raw "Form responses 1" tab, range A:L.
 export const COL = {

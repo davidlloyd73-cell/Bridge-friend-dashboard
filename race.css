@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20260822c");
+@import url("tokens.css?v=20261018c");
 
 /* =============================================================================
    race.css — "Race to 50,000" live page
@@ -41,7 +41,7 @@ main {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: linear-gradient(180deg, var(--navy-900), rgba(14, 35, 56, .88));
+  background: linear-gradient(180deg, var(--navy-900), var(--header-fade));
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--line);
   padding-bottom: 6px;
