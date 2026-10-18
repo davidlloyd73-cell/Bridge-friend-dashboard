@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20261018c");
+@import url("tokens.css?v=20261018e");
 
 /* =============================================================================
    styles.css — Bridge Friends Live Dashboard
@@ -486,3 +486,14 @@ table.standings th .swatch {
 .tab:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
 .tab-pane { display: grid; gap: 18px; }
 .tab-pane[hidden] { display: none; }
+
+/* ---------- Recap button and the folded-away Sheet check ---------- */
+.session-head-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.btn-small { padding: 6px 12px; font-size: .85rem; }
+.audit-toggle {
+  font: inherit; font-size: .9rem; cursor: pointer; text-align: left;
+  color: var(--muted); background: none; border: 0; padding: 4px 2px;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.audit-toggle:hover { color: var(--ink); }
+.audit-toggle:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }

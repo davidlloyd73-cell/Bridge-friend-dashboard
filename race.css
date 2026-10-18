@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20261018c");
+@import url("tokens.css?v=20261018e");
 
 /* =============================================================================
    race.css — "Race to 50,000" live page
@@ -302,4 +302,24 @@ main {
 @media (max-width: 560px) {
   .panel { padding: 14px; }
   .lane-bar-wrap { height: 26px; }
+}
+
+/* ---------- Pace and milestones ---------- */
+.lane-tick {
+  position: absolute; top: 6px; bottom: 6px; width: 0;
+  border-left: 1px solid var(--muted); opacity: .45; z-index: 0;
+}
+.lane-pace { display: block; margin-top: 2px; color: var(--muted); font-size: .82rem; }
+.lane-pace b { color: var(--ink-soft); font-weight: 600; }
+.milestones-panel td.num { white-space: nowrap; }
+.milestones-panel .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+#milestones-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+#milestones-table th, #milestones-table td {
+  padding: 9px 6px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+#milestones-table th { font-weight: 600; font-size: .9rem; color: var(--ink-soft); }
+#milestones-table th:first-child, #milestones-table td:first-child { width: 22%; text-align: left; }
+@media (max-width: 560px) {
+  #milestones-table th, #milestones-table td { font-size: .78rem; padding: 8px 3px; }
+  #milestones-table .swatch { display: none; }
 }

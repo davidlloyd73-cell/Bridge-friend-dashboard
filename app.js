@@ -5,12 +5,13 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261018d";
+import { buildRecap } from "./recap.js?v=20261018e";
+import { CONFIG } from "./config.js?v=20261018e";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261018d";
+} from "./data.js?v=20261018e";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -31,6 +32,9 @@ let chartRound = null;
 // scales a 6%-of-height gap to 12%.
 const ZOOM_SESSIONS = 10;
 const chartZoom = { alltime: false, round: false };
+
+// Whether the Sheet check list is expanded (it starts folded away).
+let auditOpen = false;
 
 // How many of a player's latest sessions the form sparkline shows.
 const FORM_SESSIONS = 8;
@@ -127,8 +131,12 @@ function renderHeadline(m) {
 
   if (round) {
     const pct = Math.min(100, Math.round((round.top / ROUND.TARGET) * 100));
+    const pace = m.pace && m.pace[round.leaders[0]];
+    const when = pace
+      ? ` <span class="muted">&middot; on pace for</span> <b>${escapeHtml(pace.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" }))}</b>`
+      : "";
     items.push(headlineItem("To the finish",
-      `<b>${fmtNum(round.top)}</b> of ${fmtNum(ROUND.TARGET)} <span class="muted">(${pct}%)</span>`));
+      `<b>${fmtNum(round.top)}</b> of ${fmtNum(ROUND.TARGET)} <span class="muted">(${pct}%)</span>${when}`));
   }
   el.innerHTML = items.join("");
 }
@@ -663,11 +671,20 @@ function renderAudit(m) {
   const a = m.hcpAudit;
   const issues = a.offTotal.length + a.missingOne.length + a.missingMore.length;
 
+  // Tucked away by default: a one-line note says how many hands need fixing
+  // and opens the full list on request. The open/closed state survives refreshes.
+  const toggle = $("#audit-toggle");
   if (!issues) {
     section.hidden = true;
+    if (toggle) toggle.hidden = true;
     return;
   }
-  section.hidden = false;
+  section.hidden = !auditOpen;
+  if (toggle) {
+    toggle.hidden = false;
+    toggle.setAttribute("aria-expanded", String(auditOpen));
+    toggle.textContent = `${auditOpen ? "Hide" : "Show"} sheet check — ${issues} hand${issues === 1 ? "" : "s"} need fixing`;
+  }
 
   $("#audit-head-row").innerHTML =
     `<th class="num">Hand</th><th>Date</th>` +
@@ -1282,9 +1299,42 @@ function startPolling() {
 // =============================================================================
 // Wire up the page
 // =============================================================================
+/** Copy text to the clipboard; falls back to a hidden textarea where the async API is blocked. */
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.cssText = "position:fixed;opacity:0";
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+
 function init() {
   $("#add-hand-link").href = CONFIG.FORM_URL;
   renderRoundLabels();
+
+  const toggle = $("#audit-toggle");
+  if (toggle) toggle.addEventListener("click", () => {
+    auditOpen = !auditOpen;
+    if (lastGoodModel) renderAudit(lastGoodModel);
+  });
+
+  const recap = $("#copy-recap");
+  if (recap) recap.addEventListener("click", async () => {
+    if (!lastGoodModel) return;
+    const url = location.origin + location.pathname;
+    const ok = await copyText(buildRecap(lastGoodModel, url));
+    recap.textContent = ok ? "✓ Copied — paste into WhatsApp" : "Couldn't copy";
+    setTimeout(() => { recap.textContent = "📋 Copy recap"; }, 2500);
+  });
 
   // Sortable table headers.
   document.querySelectorAll("#standings-table th.sortable").forEach((th) => {
@@ -1355,4 +1405,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261018d";
+export { buildModel, parseUKDate } from "./data.js?v=20261018e";

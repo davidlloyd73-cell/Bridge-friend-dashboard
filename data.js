@@ -522,6 +522,49 @@ export function buildModel(rows) {
   const raceRound = cumulative(sessionsRound);
   const latestRoundSession = sessionsRound.length ? sessionsRound[sessionsRound.length - 1] : null;
 
+  // ---- Pace: when would each player reach the target at the round's rhythm? --
+  // Straight-line projection from the round so far: average points per session
+  // so far, and the average gap between sessions. A guess, labelled as one on
+  // screen. Needs three sessions to mean anything, and a positive average.
+  const pace = {};
+  PLAYERS.forEach((p) => (pace[p] = null));
+  const firstRound = sessionsRound[0], lastRound = sessionsRound[sessionsRound.length - 1];
+  if (sessionsRound.length >= 3 && firstRound.date && lastRound.date) {
+    const DAY = 86400000;
+    const daysPerSession = (lastRound.date.getTime() - firstRound.date.getTime()) / (sessionsRound.length - 1) / DAY;
+    PLAYERS.forEach((p) => {
+      const total = raceRound.series[p][sessionsRound.length - 1];
+      const avg = total / sessionsRound.length;
+      if (avg <= 0) return;
+      const sessionsToGo = Math.max(0, ROUND.TARGET - total) / avg;
+      pace[p] = {
+        perSession: avg,
+        sessionsLeft: Math.ceil(sessionsToGo),
+        date: new Date(lastRound.date.getTime() + sessionsToGo * daysPerSession * DAY),
+      };
+    });
+  }
+
+  // ---- Milestones: who passed each 10,000 first, and when ------------------
+  // Judged at session level: the first session at the end of which a player's
+  // running total stood at or past the mark. Where two players first cross in
+  // the same session, the higher total at that point goes first.
+  const milestones = [];
+  const MILESTONE_STEP = 10000;
+  const marks = [];
+  for (let v = MILESTONE_STEP; v < ROUND.TARGET; v += MILESTONE_STEP) marks.push(v);
+  marks.push(ROUND.TARGET);
+  marks.forEach((value) => {
+    const per = {};
+    PLAYERS.forEach((p) => {
+      const i = raceRound.series[p].findIndex((t) => t >= value);
+      per[p] = i < 0 ? null : { idx: i, label: sessionsRound[i].label, total: raceRound.series[p][i] };
+    });
+    const reached = PLAYERS.filter((p) => per[p]);
+    reached.sort((a, b) => per[a].idx - per[b].idx || per[b].total - per[a].total);
+    milestones.push({ value, per, first: reached[0] || null });
+  });
+
   // ---- Latest hand (newest timestamp) ----
   let latestRec = null;
   records.forEach((rec) => {
@@ -825,7 +868,7 @@ export function buildModel(rows) {
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
     efficiencySession, declarerAll, declarerSession, declarerMadeAll, declarerMadeSession,
-    partnerships, recordBook: records_,
+    partnerships, recordBook: records_, pace, milestones,
     handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,
