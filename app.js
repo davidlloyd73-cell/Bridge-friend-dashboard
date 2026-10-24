@@ -5,14 +5,14 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { celebrate } from "./celebrations.js?v=20261024a";
-import { buildRecap } from "./recap.js?v=20261024a";
-import { CONFIG } from "./config.js?v=20261024a";
+import { celebrate } from "./celebrations.js?v=20261024b";
+import { buildRecap } from "./recap.js?v=20261024b";
+import { CONFIG } from "./config.js?v=20261024b";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261024a";
+} from "./data.js?v=20261024b";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -1250,6 +1250,54 @@ function renderLuck(m) {
   }).join("");
 }
 
+// ---- Quirks: one card per player of character stats ------------------------
+// Labels are relative where the differences are small (bidding, defence) and
+// absolute where a real gap is needed (late-night form), so nobody is called a
+// fader over a few points' noise.
+const OWL_GAP = 15; // points per hand between the halves of the night
+const signed = (n) => (n > 0 ? "+" : n < 0 ? "−" : "") + fmtNum(Math.abs(Math.round(n)));
+
+function renderQuirks(m) {
+  const el = $("#quirks-grid");
+  if (!el) return;
+  const { bidding, defence, owl, nemesis } = m.quirks;
+  const ranked = (obj, key, min) => PLAYERS.filter((p) => obj[p].of >= min && obj[p][key] !== null)
+    .sort((a, b) => obj[b][key] - obj[a][key]);
+  const bid = ranked(bidding, "netPerHand", 10);
+  const wall = ranked(defence, "rate", 20);
+
+  el.innerHTML = PLAYERS.map((p) => {
+    const b = bidding[p], d = defence[p], o = owl[p], n = nemesis[p];
+    let bidTag = "⚖️ Middle of the road";
+    if (bid.length > 1 && p === bid[0]) bidTag = "🐢 Plays it safe";
+    if (bid.length > 1 && p === bid[bid.length - 1]) bidTag = "🚀 Bids the moon";
+    const bidLine = b.of
+      ? `${b.overPerMade === null ? "—" : "+" + b.overPerMade.toFixed(1)} overtricks when made · ${Math.round(b.downRate * 100)}% go down`
+      : "No contracts declared yet";
+    const wallTag = wall.length > 1 && p === wall[0] ? "🧱 The Wall" : "🛡️ Defender";
+    const wallLine = d.of ? `Beats ${Math.round(d.rate * 100)}% of contracts (${d.set}/${d.of})` : "No defence logged yet";
+    let owlTag = "🕯️ Steady all night";
+    if (o.shift !== null && o.shift >= OWL_GAP) owlTag = "🦉 Night owl";
+    if (o.shift !== null && o.shift <= -OWL_GAP) owlTag = "😴 Fades late";
+    const owlLine = o.shift === null ? "Not enough finished nights"
+      : `First half ${fmtNum(Math.round(o.earlyAvg))} · second half ${fmtNum(Math.round(o.lateAvg))} a hand`;
+    const rivalLine = n
+      ? `<div class="quirk-tag">😈 Nemesis: <b style="color:${COLORS[n.nemesis.o]}">${escapeHtml(n.nemesis.o)}</b></div>
+         <div class="quirk-detail">${signed(n.nemesis.perHand)} a hand against them</div>
+         <div class="quirk-tag">🎯 Favourite victim: <b style="color:${COLORS[n.victim.o]}">${escapeHtml(n.victim.o)}</b></div>
+         <div class="quirk-detail">${signed(n.victim.perHand)} a hand against them</div>`
+      : `<div class="quirk-detail">No whole hands yet</div>`;
+    return `
+      <div class="pcard quirk-card" style="--pc:${COLORS[p]}">
+        <div class="name"><span class="swatch"></span>${escapeHtml(p)}</div>
+        <div class="quirk"><div class="quirk-label">Bidding</div><div class="quirk-tag">${bidTag}</div><div class="quirk-detail">${bidLine}</div></div>
+        <div class="quirk"><div class="quirk-label">Defence</div><div class="quirk-tag">${wallTag}</div><div class="quirk-detail">${wallLine}</div></div>
+        <div class="quirk"><div class="quirk-label">Late night</div><div class="quirk-tag">${owlTag}</div><div class="quirk-detail">${owlLine}</div></div>
+        <div class="quirk"><div class="quirk-label">Rivals</div>${rivalLine}</div>
+      </div>`;
+  }).join("");
+}
+
 function renderAll(m) {
   renderHeadline(m);
   renderLatestHand(m);
@@ -1266,6 +1314,7 @@ function renderAll(m) {
   renderContracts(m);
   renderLuck(m);
   renderRecords(m);
+  renderQuirks(m);
   renderMiniRound(m);
   renderCharts(m);
   $("#last-updated").textContent = "Updated " + m.fetchedAt.toLocaleTimeString("en-GB");
@@ -1496,4 +1545,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261024a";
+export { buildModel, parseUKDate } from "./data.js?v=20261024b";

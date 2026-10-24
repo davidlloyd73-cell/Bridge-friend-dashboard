@@ -11,14 +11,14 @@
   <meta name="apple-mobile-web-app-title" content="Bridge" />
   <meta name="theme-color" content="#0E2338" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#F3EFE6" media="(prefers-color-scheme: light)" />
-  <script src="theme.js?v=20261024a"></script>
+  <script src="theme.js?v=20261024b"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Fraunces (display) · Spectral (body) · IBM Plex Mono (all numerals).
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20261024a" />
+  <link rel="stylesheet" href="styles.css?v=20261024b" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -321,6 +321,22 @@
       </div>
     </section>
 
+    <section class="panel" aria-labelledby="quirks-title">
+      <div class="section-head">
+        <h2 id="quirks-title">Quirks</h2>
+        <span class="muted small">All-time</span>
+      </div>
+      <div id="quirks-grid" class="player-cards quirks-grid"></div>
+      <p class="muted small"><b>Bidding</b>: average tricks over or under the contract
+        as declarer. Whoever takes the most spare tricks plays it safe; whoever falls
+        shortest bids the moon. <b>Defence</b>: how often the opponents&rsquo; contract
+        went down with this player defending; the best rate is the Wall. <b>Late
+        night</b>: points per hand in the first half of each finished night against the
+        second half; a gap of 15 or more earns a label. <b>Rivals</b>: your side&rsquo;s
+        points minus theirs, per hand, with that player sitting against you. The nemesis
+        is the one you do worst against, even if you&rsquo;re still ahead.</p>
+    </section>
+
     <section class="panel" aria-labelledby="records-title">
       <div class="section-head">
         <h2 id="records-title">Records</h2>
@@ -370,7 +386,7 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script src="tabs.js?v=20261024a" defer></script>
-  <script type="module" src="app.js?v=20261024a"></script>
+  <script src="tabs.js?v=20261024b" defer></script>
+  <script type="module" src="app.js?v=20261024b"></script>
 </body>
 </html>
