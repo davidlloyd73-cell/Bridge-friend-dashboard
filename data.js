@@ -674,6 +674,7 @@ export function buildModel(rows) {
     declarerByHand.set(key, {
       player, made,
       level: src ? src.level : 0, suit: src ? src.suit : "", doubled: src ? src.doubled : "",
+      tricks: src ? src.tricksMade : 0,
     });
   });
 
@@ -888,6 +889,85 @@ export function buildModel(rows) {
     .reduce((a, b) => (a === null || hcpStats[b].max > hcpStats[a].max ? b : a), null);
   records_.strongest = dealt ? { p: dealt, hcp: hcpStats[dealt].max, at: hcpStats[dealt].maxAt } : null;
 
+  // ---- Quirks: the character stats ------------------------------------------
+  // Bidding style: tricks taken against tricks contracted, per declarer. More
+  // than needed on average = cautious (leaves tricks on the table); short of
+  // the contract = greedy. Only contracts with a result logged.
+  const bidding = {};
+  PLAYERS.forEach((p) => (bidding[p] = { of: 0, made: 0, over: 0, down: 0, under: 0, net: 0 }));
+  declarerByHand.forEach(({ player: p, made, level, tricks }) => {
+    if (made === null) return;
+    const b = bidding[p], diff = tricks - (level + 6);
+    b.of += 1; b.net += diff;
+    if (made) { b.made += 1; b.over += diff; } else { b.down += 1; b.under -= diff; }
+  });
+  PLAYERS.forEach((p) => {
+    const b = bidding[p];
+    b.overPerMade = b.made ? b.over / b.made : null;
+    b.downRate = b.of ? b.down / b.of : null;
+    b.netPerHand = b.of ? b.net / b.of : null;
+  });
+
+  // The Wall: on defence, how often the opponents' contract was beaten. Whole
+  // hands only, so both defenders are known.
+  const defence = {};
+  PLAYERS.forEach((p) => (defence[p] = { of: 0, set: 0 }));
+  wholeHands.forEach(({ key, def }) => {
+    const d = declarerByHand.get(key);
+    if (!d || d.made === null) return;
+    def.forEach((r) => { defence[r.player].of += 1; if (!d.made) defence[r.player].set += 1; });
+  });
+  PLAYERS.forEach((p) => (defence[p].rate = defence[p].of ? defence[p].set / defence[p].of : null));
+
+  // Night owl or fader: points per hand in the first half of each finished
+  // night against the second half, by hand order. Halves rather than a clock
+  // time because nights start at different times. An odd middle hand is
+  // left out so both halves are the same length.
+  const owl = {};
+  PLAYERS.forEach((p) => (owl[p] = { early: 0, earlyN: 0, late: 0, lateN: 0 }));
+  doneNights.forEach((s) => {
+    const order = [...handsIn.get(s.key)].sort((x, y) => parseInt(x, 10) - parseInt(y, 10));
+    const half = Math.floor(order.length / 2);
+    const early = new Set(order.slice(0, half)), late = new Set(order.slice(order.length - half));
+    records.forEach((r) => {
+      if (r.sessionKey !== s.key || !owl[r.player]) return;
+      if (early.has(r.hand)) { owl[r.player].early += r.score; owl[r.player].earlyN += 1; }
+      else if (late.has(r.hand)) { owl[r.player].late += r.score; owl[r.player].lateN += 1; }
+    });
+  });
+  PLAYERS.forEach((p) => {
+    const o = owl[p];
+    o.earlyAvg = o.earlyN ? o.early / o.earlyN : null;
+    o.lateAvg = o.lateN ? o.late / o.lateN : null;
+    o.shift = o.earlyAvg !== null && o.lateAvg !== null ? o.lateAvg - o.earlyAvg : null;
+  });
+
+  // Nemesis and favourite victim: average net points per hand (your side's
+  // score minus theirs) on hands where a given player sat against you. The
+  // opponent who leaves you worst off is your nemesis.
+  const rivals = {};
+  PLAYERS.forEach((p) => {
+    rivals[p] = {};
+    PLAYERS.filter((o) => o !== p).forEach((o) => (rivals[p][o] = { hands: 0, net: 0 }));
+  });
+  wholeHands.forEach(({ decl, def }) => {
+    const ds = decl[0].score, fs = def[0].score;
+    [[decl, def, ds - fs], [def, decl, fs - ds]].forEach(([mine, theirs, net]) => {
+      mine.forEach((m2) => theirs.forEach((t) => {
+        const x = rivals[m2.player][t.player];
+        x.hands += 1; x.net += net;
+      }));
+    });
+  });
+  const nemesis = {};
+  PLAYERS.forEach((p) => {
+    const opp = Object.entries(rivals[p]).filter(([, x]) => x.hands)
+      .map(([o, x]) => ({ o, hands: x.hands, perHand: x.net / x.hands }))
+      .sort((x, y) => x.perHand - y.perHand);
+    nemesis[p] = opp.length ? { nemesis: opp[0], victim: opp[opp.length - 1], all: opp } : null;
+  });
+  const quirks = { bidding, defence, owl, nemesis };
+
   // ---- Sheet audit: every hand in the record that doesn't look right -------
   // Three faults, all fixable in the Google Sheet:
   //   offTotal   — four seats logged but they don't sum to 40, so at least one
@@ -934,7 +1014,7 @@ export function buildModel(rows) {
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
     efficiencySession, declarerAll, declarerSession, declarerMadeAll, declarerMadeSession,
-    partnerships, recordBook: records_, pace, milestones, contracts, luck, luckBands,
+    partnerships, recordBook: records_, pace, milestones, contracts, luck, luckBands, quirks,
     handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,
