@@ -798,6 +798,46 @@ export function buildModel(rows) {
   const luckBands = Object.keys(bandN).map(Number).sort((a, b) => a - b)
     .map((b) => ({ band: b, hands: bandN[b], avg: bandSum[b] / bandN[b] }));
 
+  // ---- The night: cards or skill, and the turning point -----------------------
+  // Tonight's points against what the same cards typically score (the same
+  // all-time HCP bands as the luck table), so a win can be read as cards or
+  // play. One night is a small sample: a guide, not a verdict.
+  const night = { vsCards: {}, leader: null, leadSince: null, leadSinceNth: 0, hands: 0, wire: false, neverBehind: false, leadChanges: 0 };
+  PLAYERS.forEach((p) => (night.vsCards[p] = { hands: 0, actual: 0, expected: 0, diff: 0 }));
+  const tonightRows = latestSessionKey ? records.filter((r) => r.sessionKey === latestSessionKey) : [];
+  tonightRows.forEach((r) => {
+    const v = night.vsCards[r.player];
+    if (!v || !r.hasHcp) return;
+    const b = bandOf(r.hcp);
+    v.hands += 1; v.actual += r.score; v.expected += bandSum[b] / bandN[b];
+  });
+  PLAYERS.forEach((p) => (night.vsCards[p].diff = night.vsCards[p].actual - night.vsCards[p].expected));
+
+  // Running totals hand by hand: who leads outright after each, how often the
+  // lead changed hands, and the hand from which tonight's leader stayed ahead.
+  const runTot = {}; PLAYERS.forEach((p) => (runTot[p] = 0));
+  let prevLeader = null;
+  const leaders = latestSessionHands.map((h) => {
+    tonightRows.filter((r) => r.hand === h.handNo && runTot[r.player] !== undefined)
+      .forEach((r) => (runTot[r.player] += r.score));
+    const v = PLAYERS.map((p) => [p, runTot[p]]).sort((x, y) => y[1] - x[1]);
+    const lead = v[0][1] > v[1][1] ? v[0][0] : null;
+    if (lead && prevLeader && lead !== prevLeader) night.leadChanges += 1;
+    if (lead) prevLeader = lead;
+    return { handNo: h.handNo, lead, top: v[0][1], tot: { ...runTot } };
+  });
+  const last = leaders[leaders.length - 1];
+  if (last && last.lead) {
+    let i = leaders.length - 1;
+    while (i > 0 && leaders[i - 1].lead === last.lead) i -= 1;
+    night.leader = last.lead;
+    night.leadSince = leaders[i].handNo;
+    night.leadSinceNth = i + 1; // the nth hand of the night, which reads better than a sheet hand number
+    night.hands = leaders.length;
+    night.wire = i === 0;
+    night.neverBehind = leaders.every((x) => x.tot[last.lead] === x.top);
+  }
+
   // ---- Records -------------------------------------------------------------
   const handsIn = new Map(); // sessionKey -> distinct hands
   records.forEach((r) => {
@@ -1033,7 +1073,7 @@ export function buildModel(rows) {
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
     efficiencySession, declarerAll, declarerSession, declarerMadeAll, declarerMadeSession,
-    partnerships, recordBook: records_, pace, milestones, contracts, luck, luckBands, quirks,
+    night, partnerships, recordBook: records_, pace, milestones, contracts, luck, luckBands, quirks,
     handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,
