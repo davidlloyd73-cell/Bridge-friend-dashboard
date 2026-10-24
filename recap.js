@@ -4,7 +4,7 @@
 // Pure: takes the model, returns a string. No DOM, so it can be tested alone.
 // =============================================================================
 
-import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261024c";
+import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261024d";
 
 const MEDALS = ["🥇", "🥈", "🥉", "4️⃣"];
 const SUITS = { clubs: "♣", diamonds: "♦", hearts: "♥", spades: "♠", "no trumps": "NT", notrumps: "NT", nt: "NT" };
@@ -25,6 +25,38 @@ function ranking(totals) {
     place[p] = i > 0 && totals[p] === totals[ranked[i - 1]] ? place[ranked[i - 1]] : i;
   });
   return { ranked, place };
+}
+
+const ordinal = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
+const signed10 = (n) => {
+  const r = Math.round(n / 10) * 10;
+  return (r > 0 ? "+" : r < 0 ? "−" : "") + fmtNum(Math.abs(r));
+};
+
+/**
+ * Two one-line readings of tonight, shared by the This session panel and the
+ * recap: who played above or below their cards, and when the leader took over.
+ * Plain text, no markup. Either is "" when there is nothing to say yet.
+ */
+export function nightLines(m) {
+  const n = m.night;
+  if (!n || !m.latestSession) return { cards: "", turn: "" };
+  const withHcp = PLAYERS.filter((p) => n.vsCards[p].hands > 0)
+    .sort((a, b) => n.vsCards[b].diff - n.vsCards[a].diff);
+  const cards = withHcp.length
+    ? "Against their cards: " + withHcp.map((p) => `${p} ${signed10(n.vsCards[p].diff)}`).join(" · ")
+    : "";
+  let turn = "";
+  if (n.leader && n.hands > 1) {
+    turn = n.wire
+      ? `${n.leader} led from the first hand`
+      : `${n.leader} took the lead for good on the ${ordinal(n.leadSinceNth)} hand of ${n.hands}`;
+    if (n.neverBehind && !n.wire) turn += " and was never behind";
+    else if (n.leadChanges) turn += ` · ${n.leadChanges} lead change${n.leadChanges === 1 ? "" : "s"}`;
+  } else if (n.hands > 1) {
+    turn = "Level at the top";
+  }
+  return { cards, turn };
 }
 
 export function buildRecap(m, siteUrl) {
@@ -65,6 +97,10 @@ export function buildRecap(m, siteUrl) {
     const who = hcp.filter((x) => x[1] === most).map((x) => x[0]);
     lines.push(`Best cards: ${who.join(" and ")} (${most} HCP dealt)`);
   }
+
+  const nl = nightLines(m);
+  if (nl.turn) lines.push(`Turning point: ${nl.turn}`);
+  if (nl.cards) lines.push(nl.cards);
 
   const r = ranking(m.roundTotal);
   if (m.roundTotal[r.ranked[0]] > 0) {

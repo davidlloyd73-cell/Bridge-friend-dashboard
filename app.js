@@ -5,14 +5,14 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { celebrate } from "./celebrations.js?v=20261024c";
-import { buildRecap } from "./recap.js?v=20261024c";
-import { CONFIG } from "./config.js?v=20261024c";
+import { celebrate } from "./celebrations.js?v=20261024d";
+import { buildRecap, nightLines } from "./recap.js?v=20261024d";
+import { CONFIG } from "./config.js?v=20261024d";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261024c";
+} from "./data.js?v=20261024d";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -322,6 +322,17 @@ function renderThisSession(m) {
 
   // Per-player session totals as cards, in the order they finished the night.
   totalsEl.innerHTML = sessionCardsHtml(m);
+
+  // Cards or skill, and the turning point: one line each under the cards.
+  const nl = nightLines(m);
+  const insights = $("#night-insights");
+  if (insights) {
+    insights.innerHTML = [
+      nl.turn && `<li><span aria-hidden="true">⏱️</span> <b>Turning point:</b> ${escapeHtml(nl.turn)}</li>`,
+      nl.cards && `<li title="Points scored against what the same HCP typically scores, all-time. One night is a small sample."><span aria-hidden="true">🃏</span> <b>${escapeHtml(nl.cards.split(": ")[0])}:</b> ${escapeHtml(nl.cards.split(": ").slice(1).join(": "))}</li>`,
+    ].filter(Boolean).join("");
+    insights.hidden = !insights.innerHTML;
+  }
 
   // Hand-by-hand rows (newest hand first).
   body.innerHTML = [...hands].reverse().map((h) => {
@@ -1534,4 +1545,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261024c";
+export { buildModel, parseUKDate } from "./data.js?v=20261024d";
