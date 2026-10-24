@@ -966,7 +966,26 @@ export function buildModel(rows) {
       .sort((x, y) => x.perHand - y.perHand);
     nemesis[p] = opp.length ? { nemesis: opp[0], victim: opp[opp.length - 1], all: opp } : null;
   });
-  const quirks = { bidding, defence, owl, nemesis };
+  // Titles, worked out once here so the panel and the WhatsApp recap agree.
+  // Bidding and defence are relative (top and bottom of the four, once there
+  // is enough to go on); late-night form needs a real gap of OWL_GAP points a
+  // hand, so nobody is called a fader over a few points' noise.
+  const OWL_GAP = 15;
+  const rankBy = (obj, key, min) => PLAYERS.filter((p) => obj[p].of >= min && obj[p][key] !== null)
+    .sort((a, b) => obj[b][key] - obj[a][key]);
+  const bidRank = rankBy(bidding, "netPerHand", 10);
+  const wallRank = rankBy(defence, "rate", 20);
+  const victimCount = {};
+  PLAYERS.forEach((p) => { if (nemesis[p]) victimCount[nemesis[p].victim.o] = (victimCount[nemesis[p].victim.o] || 0) + 1; });
+  const titles = {
+    safe: bidRank.length > 1 ? bidRank[0] : null,
+    moon: bidRank.length > 1 ? bidRank[bidRank.length - 1] : null,
+    wall: wallRank.length > 1 ? wallRank[0] : null,
+    owls: PLAYERS.filter((p) => owl[p].shift !== null && owl[p].shift >= OWL_GAP),
+    faders: PLAYERS.filter((p) => owl[p].shift !== null && owl[p].shift <= -OWL_GAP),
+    victimCount,
+  };
+  const quirks = { bidding, defence, owl, nemesis, titles, OWL_GAP };
 
   // ---- Sheet audit: every hand in the record that doesn't look right -------
   // Three faults, all fixable in the Google Sheet:
