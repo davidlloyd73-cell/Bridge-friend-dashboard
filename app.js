@@ -5,14 +5,14 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { celebrate } from "./celebrations.js?v=20261024b";
-import { buildRecap } from "./recap.js?v=20261024b";
-import { CONFIG } from "./config.js?v=20261024b";
+import { celebrate } from "./celebrations.js?v=20261024c";
+import { buildRecap } from "./recap.js?v=20261024c";
+import { CONFIG } from "./config.js?v=20261024c";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261024b";
+} from "./data.js?v=20261024c";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -1251,34 +1251,23 @@ function renderLuck(m) {
 }
 
 // ---- Quirks: one card per player of character stats ------------------------
-// Labels are relative where the differences are small (bidding, defence) and
-// absolute where a real gap is needed (late-night form), so nobody is called a
-// fader over a few points' noise.
-const OWL_GAP = 15; // points per hand between the halves of the night
+// The titles themselves come from the model (data.js), shared with the recap.
 const signed = (n) => (n > 0 ? "+" : n < 0 ? "−" : "") + fmtNum(Math.abs(Math.round(n)));
 
 function renderQuirks(m) {
   const el = $("#quirks-grid");
   if (!el) return;
-  const { bidding, defence, owl, nemesis } = m.quirks;
-  const ranked = (obj, key, min) => PLAYERS.filter((p) => obj[p].of >= min && obj[p][key] !== null)
-    .sort((a, b) => obj[b][key] - obj[a][key]);
-  const bid = ranked(bidding, "netPerHand", 10);
-  const wall = ranked(defence, "rate", 20);
+  const { bidding, defence, owl, nemesis, titles: t } = m.quirks;
 
   el.innerHTML = PLAYERS.map((p) => {
     const b = bidding[p], d = defence[p], o = owl[p], n = nemesis[p];
-    let bidTag = "⚖️ Middle of the road";
-    if (bid.length > 1 && p === bid[0]) bidTag = "🐢 Plays it safe";
-    if (bid.length > 1 && p === bid[bid.length - 1]) bidTag = "🚀 Bids the moon";
+    const bidTag = p === t.safe ? "🐢 Plays it safe" : p === t.moon ? "🚀 Bids the moon" : "⚖️ Middle of the road";
     const bidLine = b.of
       ? `${b.overPerMade === null ? "—" : "+" + b.overPerMade.toFixed(1)} overtricks when made · ${Math.round(b.downRate * 100)}% go down`
       : "No contracts declared yet";
-    const wallTag = wall.length > 1 && p === wall[0] ? "🧱 The Wall" : "🛡️ Defender";
+    const wallTag = p === t.wall ? "🧱 The Wall" : "🛡️ Defender";
     const wallLine = d.of ? `Beats ${Math.round(d.rate * 100)}% of contracts (${d.set}/${d.of})` : "No defence logged yet";
-    let owlTag = "🕯️ Steady all night";
-    if (o.shift !== null && o.shift >= OWL_GAP) owlTag = "🦉 Night owl";
-    if (o.shift !== null && o.shift <= -OWL_GAP) owlTag = "😴 Fades late";
+    const owlTag = t.owls.includes(p) ? "🦉 Night owl" : t.faders.includes(p) ? "😴 Fades late" : "🕯️ Steady all night";
     const owlLine = o.shift === null ? "Not enough finished nights"
       : `First half ${fmtNum(Math.round(o.earlyAvg))} · second half ${fmtNum(Math.round(o.lateAvg))} a hand`;
     const rivalLine = n
@@ -1545,4 +1534,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261024b";
+export { buildModel, parseUKDate } from "./data.js?v=20261024c";

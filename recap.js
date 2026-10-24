@@ -4,7 +4,7 @@
 // Pure: takes the model, returns a string. No DOM, so it can be tested alone.
 // =============================================================================
 
-import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261024b";
+import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261024c";
 
 const MEDALS = ["🥇", "🥈", "🥉", "4️⃣"];
 const SUITS = { clubs: "♣", diamonds: "♦", hearts: "♥", spades: "♠", "no trumps": "NT", notrumps: "NT", nt: "NT" };
@@ -75,6 +75,20 @@ export function buildRecap(m, siteUrl) {
     if (lead) {
       lines.push(`${r.ranked[0]} on pace to finish about ${lead.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`);
     }
+  }
+
+  // All-time quirk titles, as on the Players tab.
+  const t = m.quirks && m.quirks.titles;
+  if (t) {
+    const q = [];
+    if (t.wall) q.push(`🧱 The Wall: ${t.wall}`);
+    if (t.moon) q.push(`🚀 Bids the moon: ${t.moon}`);
+    if (t.safe) q.push(`🐢 Plays it safe: ${t.safe}`);
+    if (t.owls.length) q.push(`🦉 Night owl: ${t.owls.join(" and ")}`);
+    if (t.faders.length) q.push(`😴 Fades late: ${t.faders.join(" and ")}`);
+    const [victim, n] = Object.entries(t.victimCount).sort((a, b) => b[1] - a[1])[0] || [];
+    if (n >= 2) q.push(`🎯 Favourite victim of ${n}: ${victim}`);
+    if (q.length) { lines.push(""); lines.push("*Quirks*"); q.forEach((x) => lines.push(x)); }
   }
 
   if (siteUrl) { lines.push(""); lines.push(siteUrl); }
