@@ -5,14 +5,14 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { celebrate } from "./celebrations.js?v=20261018g";
-import { buildRecap } from "./recap.js?v=20261018g";
-import { CONFIG } from "./config.js?v=20261018g";
+import { celebrate } from "./celebrations.js?v=20261024a";
+import { buildRecap } from "./recap.js?v=20261024a";
+import { CONFIG } from "./config.js?v=20261024a";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261018g";
+} from "./data.js?v=20261024a";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -387,10 +387,11 @@ function renderDeclarer(m) {
 
 function renderPlayerCards(m) {
   const el = $("#player-cards");
-  const leader = [...PLAYERS].sort((a, b) => m.grand[b] - m.grand[a])[0];
+  const ranked = [...PLAYERS].sort((a, b) => m.grand[b] - m.grand[a]);
+  const leader = ranked[0];
   const sessTotals = m.latestSession ? m.latestSession.perPlayer : null;
 
-  el.innerHTML = PLAYERS.map((p) => {
+  el.innerHTML = ranked.map((p) => {
     const isLeader = p === leader && m.grand[p] > 0;
     const sess = sessTotals ? sessTotals[p] : 0;
     return `
@@ -456,10 +457,11 @@ function renderTable(m) {
 
 function renderRoundCards(m) {
   const el = $("#player-cards-2026");
-  const leader = [...PLAYERS].sort((a, b) => m.roundTotal[b] - m.roundTotal[a])[0];
+  const ranked = [...PLAYERS].sort((a, b) => m.roundTotal[b] - m.roundTotal[a]);
+  const leader = ranked[0];
   const sessTotals = m.latestRoundSession ? m.latestRoundSession.perPlayer : null;
 
-  el.innerHTML = PLAYERS.map((p) => {
+  el.innerHTML = ranked.map((p) => {
     const isLeader = p === leader && m.roundTotal[p] > 0;
     const sess = sessTotals ? sessTotals[p] : 0;
     return `
@@ -1494,4 +1496,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261018g";
+export { buildModel, parseUKDate } from "./data.js?v=20261024a";
