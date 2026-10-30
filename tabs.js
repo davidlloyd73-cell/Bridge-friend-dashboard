@@ -1,5 +1,5 @@
 // =============================================================================
-// tabs.js — the dashboard's section tabs (bridge.html only).
+// tabs.js — the dashboard's section tabs (index.html only).
 //
 // Plain DOM, no dependencies. The tab to open comes from the URL hash
 // (#round — so a tab can be linked to), else the last one used on this device,
