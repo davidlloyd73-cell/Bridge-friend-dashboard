@@ -8,12 +8,12 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <meta name="theme-color" content="#0E2338" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#F3EFE6" media="(prefers-color-scheme: light)" />
-  <script src="theme.js?v=20261030a"></script>
+  <script src="theme.js?v=20261030b"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="tokens.css?v=20261030a" />
-  <link rel="stylesheet" href="hub.css?v=20261030a" />
+  <link rel="stylesheet" href="tokens.css?v=20261030b" />
+  <link rel="stylesheet" href="hub.css?v=20261030b" />
 </head>
 <body>
   <header class="hub-header">
@@ -32,9 +32,27 @@
       <iframe class="bridge-frame" src="index.html" title="Bridge Friends live dashboard" loading="lazy"></iframe>
     </section>
 
+    <section class="win win-now" aria-labelledby="h-now">
+      <div class="win-head"><h2 id="h-now">🌦 London now</h2></div>
+      <div id="weather" class="weather"><p class="muted">Loading…</p></div>
+      <h3 class="sub">Tube</h3>
+      <div id="tube" class="tube"><p class="muted">Loading…</p></div>
+    </section>
+
+    <section class="win" aria-labelledby="h-bw">
+      <div class="win-head"><h2 id="h-bw">♣ Bridge world</h2></div>
+      <div class="deal" id="deal" aria-label="Hand of the day"></div>
+      <ul class="news news-small" id="news-bridge"><li class="muted">Loading…</li></ul>
+    </section>
+
     <section class="win" aria-labelledby="h-art">
       <div class="win-head"><h2 id="h-art">🖼 Art &amp; exhibitions</h2></div>
       <ul class="news" id="news-art"><li class="muted">Loading…</li></ul>
+    </section>
+
+    <section class="win" aria-labelledby="h-music">
+      <div class="win-head"><h2 id="h-music">🎻 Music &amp; opera</h2></div>
+      <ul class="news" id="news-music"><li class="muted">Loading…</li></ul>
     </section>
 
     <section class="win" aria-labelledby="h-film">
@@ -45,6 +63,11 @@
     <section class="win" aria-labelledby="h-theatre">
       <div class="win-head"><h2 id="h-theatre">🎭 London theatre</h2></div>
       <ul class="news" id="news-theatre"><li class="muted">Loading…</li></ul>
+    </section>
+
+    <section class="win" aria-labelledby="h-food">
+      <div class="win-head"><h2 id="h-food">🍽 Eating out</h2></div>
+      <ul class="news" id="news-food"><li class="muted">Loading…</li></ul>
     </section>
 
     <section class="win win-doom" aria-labelledby="h-doom">
@@ -58,6 +81,6 @@
     </section>
   </main>
 
-  <script src="hub.js?v=20261030a"></script>
+  <script src="hub.js?v=20261030b"></script>
 </body>
 </html>

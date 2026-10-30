@@ -47,9 +47,30 @@ a:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-ra
 .doom-read { margin: 8px 0 10px; font-style: italic; color: var(--ink-soft); }
 .doom-foot { margin: 10px 0 0; font-size: .75rem; color: var(--muted); text-align: right; }
 
+.sub { margin: 12px 0 6px; font: 600 .8rem var(--font-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.weather { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.weather .day { background: var(--navy-700); border-radius: 10px; padding: 8px 4px; }
+.weather .ico { font-size: 1.6rem; line-height: 1.2; }
+.weather .t { font: 600 .85rem var(--font-mono); }
+.weather .d { font-size: .78rem; color: var(--muted); }
+.tube-ok { color: var(--good); margin: 0; }
+.tube-line { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-top: 1px solid var(--line); font-size: .92rem; }
+.tube-line:first-child { border-top: 0; }
+.tube-line .st { color: var(--bad); text-align: right; }
+.tube-note { margin: 8px 0 0; font-size: .75rem; color: var(--muted); }
+
+.deal { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-areas: ". n ." "w info e" ". s ."; gap: 6px; margin-bottom: 10px;
+  font: 400 .8rem/1.5 var(--font-mono); }
+.deal .hand { background: var(--navy-700); border-radius: 8px; padding: 6px 8px; white-space: nowrap; }
+.deal .hand b { display: block; font-size: .7rem; color: var(--muted); font-weight: 600; }
+.deal .n { grid-area: n; } .deal .e { grid-area: e; } .deal .s { grid-area: s; } .deal .w { grid-area: w; }
+.deal .info { grid-area: info; align-self: center; text-align: center; color: var(--gold); font-size: .75rem; }
+.deal .red { color: var(--bad); }
+
 @media (max-width: 560px) {
   .hub-header { padding: 12px 14px; }
   .hub-grid { padding: 12px 14px 28px; }
   .bridge-frame { height: 480px; }
+  .deal { font-size: .72rem; }
 }
 @media (prefers-reduced-motion: reduce) { .doom-fill { transition: none; } }
