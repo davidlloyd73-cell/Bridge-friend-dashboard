@@ -1,0 +1,55 @@
+/* hub.css — the news hub at the site root. Tokens (colours, fonts, light/dark)
+   come from tokens.css, shared with the Bridge pages. */
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--navy-900); color: var(--ink); }
+body { font-family: var(--font-body); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+a { color: var(--teal); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 3px; }
+.muted { color: var(--muted); font-size: .9rem; }
+
+.hub-header {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 16px 20px; border-bottom: 1px solid var(--line);
+}
+.hub-header h1 { margin: 0; font: 600 1.6rem var(--font-display); }
+.header-status { display: flex; align-items: center; gap: 10px; }
+
+.hub-grid {
+  display: grid; gap: 16px; padding: 16px 20px 32px; max-width: 1400px; margin: 0 auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+}
+.win {
+  background: var(--navy-800); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 14px 16px; min-width: 0;
+  display: flex; flex-direction: column;
+}
+.win-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.win h2 { margin: 0; font: 600 1.15rem var(--font-display); color: var(--gold); }
+.win-links { font-size: .85rem; color: var(--muted); }
+
+.win-bridge { grid-column: 1 / -1; }
+.bridge-frame { width: 100%; height: 520px; border: 0; border-radius: 10px; background: var(--navy-900); }
+
+.news { list-style: none; margin: 0; padding: 0; max-height: 440px; overflow-y: auto; }
+.news li { padding: 9px 0; border-top: 1px solid var(--line); }
+.news li:first-child { border-top: 0; }
+.news a { color: var(--ink); font-weight: 600; }
+.news a:hover { color: var(--teal); }
+.news .meta { display: block; font: 400 .72rem var(--font-mono); color: var(--muted); margin-top: 2px; }
+.news .blurb { display: block; font-size: .9rem; color: var(--ink-soft); margin-top: 2px; }
+.news-small { max-height: 260px; font-size: .92rem; }
+
+.win-doom { border-style: dashed; }
+.win-doom h2 { color: var(--bad); }
+.doom-bar { height: 12px; border-radius: 999px; background: var(--track-bg); border: 1px solid var(--line); overflow: hidden; }
+.doom-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--good), var(--gold), var(--bad)); transition: width .8s ease; }
+.doom-read { margin: 8px 0 10px; font-style: italic; color: var(--ink-soft); }
+.doom-foot { margin: 10px 0 0; font-size: .75rem; color: var(--muted); text-align: right; }
+
+@media (max-width: 560px) {
+  .hub-header { padding: 12px 14px; }
+  .hub-grid { padding: 12px 14px 28px; }
+  .bridge-frame { height: 480px; }
+}
+@media (prefers-reduced-motion: reduce) { .doom-fill { transition: none; } }

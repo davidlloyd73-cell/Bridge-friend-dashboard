@@ -107,7 +107,7 @@ Open that URL — the dashboard is live. 🎉
 
 | File         | What it is |
 |--------------|------------|
-| `index.html` | Page structure + the Chart.js CDN tag. |
+| `bridge.html` | Page structure (the Bridge dashboard; `index.html` is now the news hub) + the Chart.js CDN tag. |
 | `styles.css` | Dashboard styling. Imports `tokens.css`; declares no colours of its own. |
 | `tokens.css` | **All design tokens** — the navy/teal/gold palette, player colours, shadow, radius and the three font stacks. Shared by both pages; edit a colour here and both follow. |
 | `app.js`     | Fetches the sheet, parses it defensively, computes all the stats, renders, and runs the 60-second polling loop. |
