@@ -1,7 +1,14 @@
 {
- "updated": "2026-10-31T17:14:58+00:00",
+ "updated": "2026-10-31T21:31:54+00:00",
  "windows": {
   "art": [
+   {
+    "title": "‘A whitewashing of minds’: the mania and myth of Geoffrey Bardon and the painting men of Papunya",
+    "url": "https://www.theguardian.com/artanddesign/ng-interactive/2026/nov/01/geoffrey-bardon-aboriginal-dot-painting-papunya",
+    "source": "The Guardian",
+    "date": "2026-10-31T19:00:51+00:00",
+    "summary": "Bardon has largely remained in popular consciousness  as the synonymous hero and martyr of the art movement’s origin story. But a new biography is unravelling the myth, and the madness, behind the taleLike many…"
+   },
    {
     "title": "‘A gust of wind blowing back her hair added something special’: Mark McEvoy’s best phone picture",
     "url": "https://www.theguardian.com/lifeandstyle/2026/oct/31/mark-mcevoy-best-phone-picture-smoking-girl-outside-shop-doorway",
@@ -78,16 +85,72 @@
     "source": "ARTnews",
     "date": "2026-10-30T18:10:32+00:00",
     "summary": "How richly varied sculpture can be in our present moment is well illustrated in shows on view in NYC this fall."
-   },
-   {
-    "title": "Italian Police Used AI to Identify $200 M. Worth of Stolen Art and Antiquities",
-    "url": "https://www.artnews.com/art-news/news/italian-police-ai-identify-stolen-art-antiquities-1234804277/",
-    "source": "ARTnews",
-    "date": "2026-10-30T18:08:35+00:00",
-    "summary": "In an attempt to disguise the theft, a lamb was painted over with a scroll."
    }
   ],
   "film": [
+   {
+    "title": "Taika Waititi Slams ‘Klara and the Sun’ Critics as ‘Irrelevant,’ ‘Sad Lost Souls’ and Says He Hasn’t ‘Read a Review’ in 15 Years: ‘But I Do Listen to the People’",
+    "url": "https://variety.com/2026/film/news/taika-waititi-defends-klara-and-the-sun-1236936368/",
+    "source": "Variety",
+    "date": "2026-10-31T21:15:40+00:00",
+    "summary": "Taika Waititi has taken to social media to defend “Klara and the Sun,” his latest directorial effort, amid poor reviews and bleak box office numbers, sharing an Instagram post featuring the film’s poster and its Rotten…"
+   },
+   {
+    "title": "Alex Gibney-Produced ‘Mohabat,’ Directed by James Longley, Wins at Ji.hlava: ‘Meticulously Researched and Exquisitely Crafted’",
+    "url": "https://variety.com/2026/artisans/awards/alex-gibney-mohabat-james-longley-winner-jihlava-1236935998/",
+    "source": "Variety",
+    "date": "2026-10-31T20:30:00+00:00",
+    "summary": "James Longley’s “Mohabat” won the Opus Bonum section at Ji.hlava Documentary Film Festival on Saturday. Produced by Mohammad Sharif Hotak, Longley and Oscar-winning filmmaker Alex Gibney, it follows a 12-year-old boy…"
+   },
+   {
+    "title": "Judge Again Tosses Out Donald Trump’s $10 Billion Lawsuit Against The Wall Street Journal Over Its Reporting On Jeffrey Epstein Birthday Letter",
+    "url": "https://deadline.com/2026/10/trump-wall-street-journal-lawsuit-dismissed-jeffrey-epstein-1237210665/",
+    "source": "Deadline",
+    "date": "2026-10-31T20:15:54+00:00",
+    "summary": "UPDATED: A federal judge has again dismissed Donald Trump’s $10 billion defamation lawsuit against The Wall Street Journal over its reporting on a letter sent to Jeffrey Epstein for his birthday in 2003. U.S. District…"
+   },
+   {
+    "title": "Jessica Lange Says Acting Career Might Be “Coming To An End”",
+    "url": "https://deadline.com/2026/10/jessica-lange-retirement-1237210656/",
+    "source": "Deadline",
+    "date": "2026-10-31T20:05:37+00:00",
+    "summary": "Jessica Lange says she feels her acting career might be “coming to an end,” and that her current film, Long Day’s Journey Into Night, wouldn’t be a bad way to go out. In an interview with Rolling Stone posted yesterday,…"
+   },
+   {
+    "title": "‘The Mosquito Bowl’: How a Parrot Proved to Be Peter Berg’s Biggest Challenge",
+    "url": "https://variety.com/2026/artisans/news/the-mosquito-bowl-peter-berg-parrot-1236935619/",
+    "source": "Variety",
+    "date": "2026-10-31T20:00:00+00:00",
+    "summary": "Director Peter Berg faced numerous challenges shooting his latest film, “The Mosquito Bowl.” Based on Buzz Bissinger’s book, the film tells the true story of four college football stars — Tom Francis as David Schreiner,…"
+   },
+   {
+    "title": "‘Paper Plane,’ ‘Helicopter’ and ‘Old Bogus Massacre’ Among Austin Film Festival Script and Film Competition Award Winners (EXCLUSIVE)",
+    "url": "https://variety.com/2026/film/news/austin-film-festival-script-film-award-winners-1236936233/",
+    "source": "Variety",
+    "date": "2026-10-31T19:30:00+00:00",
+    "summary": "The Austin Film Festival has announced the winners of its script and film competition. The 33rd annual event received more than 12,500 submissions, with 78 scripts advancing to the finalist round before the festival…"
+   },
+   {
+    "title": "‘It: Welcome to Derry’ Surprise Halloween Episode Now Streaming On HBO Max",
+    "url": "https://deadline.com/2026/10/it-welcome-to-derry-halloween-hbo-max-1237210647/",
+    "source": "Deadline",
+    "date": "2026-10-31T18:18:10+00:00",
+    "summary": "All treat, no trick: HBO Max has released a surprise episode of It: Welcome to Derry for Halloween. “IT’s a surprise Halloween treat,” HBO Max posted on its Instagram page along with a brief clip of the episode (watch…"
+   },
+   {
+    "title": "Jack Nicholson Has ‘Disappeared’ but Is ‘Well,’ Says Michael Douglas: ‘I Still See Him’",
+    "url": "https://variety.com/2026/film/news/jack-nicholson-retired-michael-douglas-1236936249/",
+    "source": "Variety",
+    "date": "2026-10-31T18:07:44+00:00",
+    "summary": "Michael Douglas is giving fans an update on Jack Nicholson. While promoting his new memoir, “One Helluva Ride,” at a recent event, Douglas was asked about Nicholson and his relationship with the “Something’s Gotta Give”…"
+   },
+   {
+    "title": "Ken Russell’s ‘The Devils’ Feels More Relevant Than It Did 55 Years Ago. That’s Because It’s About a World Gone Mad",
+    "url": "https://variety.com/2026/film/columns/ken-russells-the-devils-feels-more-relevant-than-ever-1236936074/",
+    "source": "Variety",
+    "date": "2026-10-31T17:46:41+00:00",
+    "summary": "I’m an ardent fan of Ken Russell, yet I always considered “The Devils” to be a transgressive novelty: a voluptuous exercise in extreme blasphemy and extreme horror. No doubt: It’s both those things. Yet I didn’t think…"
+   },
    {
     "title": "Producer Will Packer Stumps to Get Out the Vote and Launch a Private HBCU Fundraising Campaign",
     "url": "https://variety.com/2026/biz/news/will-packer-vote-florida-am-university-hbcus-1236935935/",
@@ -108,69 +171,6 @@
     "source": "Deadline",
     "date": "2026-10-31T16:42:46+00:00",
     "summary": "Ian Gillan, lead singer for classic rockers Deep Purple, has been hospitalized following a medical emergency that prompted the band to cancel two shows this weekend. The exact nature of the 81-year-old singer’s medical…"
-   },
-   {
-    "title": "‘Clayface’ Chasing Elizabeth Holmes & Nathan Fielder For No. 1, But Docu Duo Have Edge With Near $11M – Halloween Box Office Update",
-    "url": "https://deadline.com/2026/10/box-office-you-can-see-everything-clayface-halloween-1237209579/",
-    "source": "Deadline",
-    "date": "2026-10-31T16:15:00+00:00",
-    "summary": "SATURDAY AM: Both A24’s You Can See Everything and Warner Bros/DC’s Clayface remain above $10M in what isn’t the worst weekend this year at the domestic box office, but close with all titles grossing north of $63M.…"
-   },
-   {
-    "title": "Box Office: ‘You Can See Everything’ Fends Off ‘Clayface’ for Top Spot on Friday With $3.56 Million",
-    "url": "https://variety.com/2026/film/box-office/box-office-you-can-see-everything-clayface-1236936071/",
-    "source": "Variety",
-    "date": "2026-10-31T15:49:12+00:00",
-    "summary": "A24’s “You Can See Everything” narrowly beat Warner Bros. and DC’s “Clayface” at the Friday box office, cementing its status as the must-watch documentary — or film, for that matter — of the moment. The buzzy Elizabeth…"
-   },
-   {
-    "title": "Indian Filmmaker Sanjay Gupta Dies: ‘Kaante’ Director Was 57",
-    "url": "https://deadline.com/2026/10/sanjay-gupta-dead-1237210607/",
-    "source": "Deadline",
-    "date": "2026-10-31T15:17:13+00:00",
-    "summary": "Sanjay Gupta, the Indian director best known for the crime drama films Kaante and Shootout at Lokhandwala, died Friday, October 30, after a fall at his home in Mumbai. He was 57 (though some sources put his age at 59).…"
-   },
-   {
-    "title": "‘Ah Girl’ Wins Best Film at Singapore’s Silver Screen Awards as Shahrbanoo Sadat Takes Director Prize",
-    "url": "https://variety.com/2026/film/festivals/ah-girl-top-prize-singapore-film-festival-1236935983/",
-    "source": "Variety",
-    "date": "2026-10-31T15:00:00+00:00",
-    "summary": "Singaporean filmmaker Ang Geck Geck Priscilla’s debut feature “Ah Girl” won best film in the Asian Feature Film Competition at the Singapore International Film Festival’s Silver Screen Awards on Saturday. The film…"
-   },
-   {
-    "title": "Emmy-Winning Comedian Alex Edelman Says Loss Of Kennedy Center Is No Joke",
-    "url": "https://deadline.com/2026/10/alex-edelman-kennedy-center-1237210602/",
-    "source": "Deadline",
-    "date": "2026-10-31T14:03:25+00:00",
-    "summary": "Alex Edelman, the comedian and actor who won an Emmy for his 2024 HBO/Max special Just For Us and a special Tony for the original Broadway staging, laments what is effectively the loss to comics of a newly politicized…"
-   },
-   {
-    "title": "What To Watch For As Networks Cover Midterm Election Night: More Data, More Coverage & More Competition",
-    "url": "https://deadline.com/2026/10/midterms-news-networks-coverage-2026-1237207099/",
-    "source": "Deadline",
-    "date": "2026-10-31T14:00:04+00:00",
-    "summary": "Networks are preparing for their most important night of the year, an Election Night next week that will feature more data, more bells and whistles and, perhaps most important, just more coverage than any recent midterm…"
-   },
-   {
-    "title": "Dubai-Based Director Faisal Hashmi Launches Spine Drop Pictures & Inaugural Horror Slate",
-    "url": "https://deadline.com/2026/10/dubai-faisal-hashmi-spine-drop-pictures-horror-slate-1237210593/",
-    "source": "Deadline",
-    "date": "2026-10-31T10:35:47+00:00",
-    "summary": "EXCLUSIVE: Here’s a nicely timed company announcement for Halloween. Dubai-based indie director and writer Faisal Hashmi has officially launched genre-focused production company Spine Drop Pictures and unveiled its…"
-   },
-   {
-    "title": "‘The Celebrity Traitors’ Finale Draws Record Audience To BBC",
-    "url": "https://deadline.com/2026/10/the-celebrity-traitors-finale-draws-record-rating-1237210586/",
-    "source": "Deadline",
-    "date": "2026-10-31T10:15:06+00:00",
-    "summary": "The Celebrity Traitors bowed out with record ratings on Friday. The Claudia Winkleman-fronted BBC series drew an average overnight audience of 11.23 million viewers, topping the previous high of 11 million for last…"
-   },
-   {
-    "title": "Sanjay Gupta, Indian Director of ‘Kaante’ and ‘Zinda,’ Dies at 59",
-    "url": "https://variety.com/2026/film/obituaries-people-news/sanjay-gupta-dead-kaante-zinda-1236935973/",
-    "source": "Variety",
-    "date": "2026-10-31T09:33:22+00:00",
-    "summary": "Indian filmmaker Sanjay Gupta, whose credits include the crime thriller “Kaante,” the gangster saga “Shootout at Wadala” and the Hrithik Roshan-starring “Kaabil,” has died following a fall at his Mumbai residence on…"
    }
   ],
   "theatre": [
@@ -333,6 +333,41 @@
   ],
   "music": [
    {
+    "title": "Rediscovering the kapellmeister of Auschwitz",
+    "url": "https://slippedisc.com/2026/10/rediscovering-the-kapellmeister-of-auschwitz/?utm_source=rss&utm_medium=rss&utm_campaign=rediscovering-the-kapellmeister-of-auschwitz",
+    "source": "Slipped Disc",
+    "date": "2026-10-31T20:35:42+00:00",
+    "summary": "German media are shining a light on the...\nThe post Rediscovering the kapellmeister of Auschwitz appeared first on Slippedisc."
+   },
+   {
+    "title": "Ruth Leon recommends:  the world of William Hogarth",
+    "url": "https://slippedisc.com/2026/10/ruth-leon-enters-the-world-of-william-hogarth/?utm_source=rss&utm_medium=rss&utm_campaign=ruth-leon-enters-the-world-of-william-hogarth",
+    "source": "Slipped Disc",
+    "date": "2026-10-31T20:25:17+00:00",
+    "summary": "From the leading arts substack William Hogarth –...\nThe post Ruth Leon recommends:  the world of William Hogarth appeared first on Slippedisc."
+   },
+   {
+    "title": "Why it’s so hard for a string quartet to stay together",
+    "url": "https://slippedisc.com/2026/10/why-its-so-hard-for-a-string-quartet-to-stay-together/?utm_source=rss&utm_medium=rss&utm_campaign=why-its-so-hard-for-a-string-quartet-to-stay-together",
+    "source": "Slipped Disc",
+    "date": "2026-10-31T17:30:42+00:00",
+    "summary": "From my latest monthly essay in The Critic...\nThe post Why it’s so hard for a string quartet to stay together appeared first on Slippedisc."
+   },
+   {
+    "title": "Berlin Phil offers its take on maestro walkout",
+    "url": "https://slippedisc.com/2026/10/berlin-phil-offers-its-take-on-maestro-walkout/?utm_source=rss&utm_medium=rss&utm_campaign=berlin-phil-offers-its-take-on-maestro-walkout",
+    "source": "Slipped Disc",
+    "date": "2026-10-31T17:26:52+00:00",
+    "summary": "The orchestra has tried to tone down the...\nThe post Berlin Phil offers its take on maestro walkout appeared first on Slippedisc."
+   },
+   {
+    "title": "Dear Alma, My orchestra’s been suspended. What should I do?",
+    "url": "https://slippedisc.com/2026/10/dear-alma-my-orchestra-has-just-been-suspended/?utm_source=rss&utm_medium=rss&utm_campaign=dear-alma-my-orchestra-has-just-been-suspended",
+    "source": "Slipped Disc",
+    "date": "2026-10-31T17:15:44+00:00",
+    "summary": "From our agony aunt’s mailbag: Dear Alma, I’m...\nThe post Dear Alma, My orchestra’s been suspended. What should I do? appeared first on Slippedisc."
+   },
+   {
     "title": "Spain confirms train crash death of leading composer",
     "url": "https://slippedisc.com/2026/10/soain-confirms-train-crash-death-of-leading-composer/?utm_source=rss&utm_medium=rss&utm_campaign=soain-confirms-train-crash-death-of-leading-composer",
     "source": "Slipped Disc",
@@ -380,41 +415,6 @@
     "source": "Slipped Disc",
     "date": "2026-10-30T13:12:53+00:00",
     "summary": "From ABC News: A professor at Ohio’s Oberlin...\nThe post Horror: Oberlin College professor and wife found shot appeared first on Slippedisc."
-   },
-   {
-    "title": "Vienna Phil’s man gets flash from Japan",
-    "url": "https://slippedisc.com/2026/10/vienna-phils-man-gets-flash-from-japan/?utm_source=rss&utm_medium=rss&utm_campaign=vienna-phils-man-gets-flash-from-japan",
-    "source": "Slipped Disc",
-    "date": "2026-10-30T13:04:42+00:00",
-    "summary": "The Russian conductor Tughan Sokhiev who will conduct...\nThe post Vienna Phil’s man gets flash from Japan appeared first on Slippedisc."
-   },
-   {
-    "title": "Unseen Rossini: Wexford’s bizarre misunderstanding",
-    "url": "https://slippedisc.com/2026/10/unseen-rossini-wexfords-bizarre-misunderstanding/?utm_source=rss&utm_medium=rss&utm_campaign=unseen-rossini-wexfords-bizarre-misunderstanding",
-    "source": "Slipped Disc",
-    "date": "2026-10-30T06:11:29+00:00",
-    "summary": "Tonight, OperaVision visits Wexford Festival Opera for Rossini’s...\nThe post Unseen Rossini: Wexford’s bizarre misunderstanding appeared first on Slippedisc."
-   },
-   {
-    "title": "Italian maestro, 88",
-    "url": "https://slippedisc.com/2026/10/italian-maestro-88/?utm_source=rss&utm_medium=rss&utm_campaign=italian-maestro-88",
-    "source": "Slipped Disc",
-    "date": "2026-10-29T19:38:28+00:00",
-    "summary": "The conductor Gabriele Ferro has died in Palermo...\nThe post Italian maestro, 88 appeared first on Slippedisc."
-   },
-   {
-    "title": "A composer is missing in Spain’s train disaster",
-    "url": "https://slippedisc.com/2026/10/a-composer-is-missing-in-spains-train-disaster/?utm_source=rss&utm_medium=rss&utm_campaign=a-composer-is-missing-in-spains-train-disaster",
-    "source": "Slipped Disc",
-    "date": "2026-10-29T19:24:18+00:00",
-    "summary": "We hear that among those misssing after Wednesday’s...\nThe post A composer is missing in Spain’s train disaster appeared first on Slippedisc."
-   },
-   {
-    "title": "The Mad Lover review – eccentric charm and baroque brilliance as duo move from Eccles to Indiana Jones",
-    "url": "https://www.theguardian.com/music/2026/oct/29/the-mad-lover-review-smith-square-hall-london-thomas-dunford",
-    "source": "The Guardian",
-    "date": "2026-10-29T16:22:59+00:00",
-    "summary": "Smith Square Hall, LondonPart of the London Festival of Baroque Music, lutenist Thomas Dunford and violinist Théotime Langlois de Swarte’s concert struck a balance between freewheeling music-making and precise…"
    }
   ],
   "food": [
@@ -505,6 +505,41 @@
   ],
   "doom": [
    {
+    "title": "Sanity Checks for Sanity Checks for Sparse Autoencoders",
+    "url": "https://www.lesswrong.com/posts/EC5H7xakTgxxNXm5g/sanity-checks-for-sanity-checks-for-sparse-autoencoders",
+    "source": "LessWrong",
+    "date": "2026-10-31T20:47:20+00:00",
+    "summary": "This post will probably not be very informative to readers who don't know what an SAE (Sparse Autoencoder) is.An interpretability researcher once told me, \"SAEs can never fail, they can only be failed.\" But recently,…"
+   },
+   {
+    "title": "Accidentally Misleading People Should Be Embarrassing; Or, Higher Innocence",
+    "url": "https://www.lesswrong.com/posts/XpBwFsRhkQRQJN2pt/accidentally-misleading-people-should-be-embarrassing-or",
+    "source": "LessWrong",
+    "date": "2026-10-31T20:03:31+00:00",
+    "summary": "Embarrassment and Innocence\nSometimes we say things that we think are true—perhaps even things that are true—which end up causing reasonable people to conclude something false. It's tempting to relate to such a…"
+   },
+   {
+    "title": "Against SURA",
+    "url": "https://www.lesswrong.com/posts/xikGZ8fuhdG6DApAo/against-sura",
+    "source": "LessWrong",
+    "date": "2026-10-31T19:32:26+00:00",
+    "summary": "The AI Futures Project[1] distinguishes several different plans for navigating the AI transition, which I'll lump into two broader categories:Plan A (my combination of their Plan A/S/Other) involves working for a global…"
+   },
+   {
+    "title": "Regulate the Deployment, Not Just the Model",
+    "url": "https://www.lesswrong.com/posts/woCAtAxfTkNzEPkLq/regulate-the-deployment-not-just-the-model",
+    "source": "LessWrong",
+    "date": "2026-10-31T19:04:29+00:00",
+    "summary": "A who-does-what plan for AI safety, built around Trusted Deployers: certified hosts that keep dangerous models guarded without ending open access.AI has reached a new level of public interest. That may seem like a silly…"
+   },
+   {
+    "title": "Disquiet grows in Albanese’s back yard as Grayndler artists unite against ‘insane’ AI proposal",
+    "url": "https://www.theguardian.com/australia-news/2026/nov/01/artists-against-ai-proposal-anthony-albanese-grayndler-sydney-inner-west",
+    "source": "The Guardian",
+    "date": "2026-10-31T19:00:52+00:00",
+    "summary": "Inner west Sydney seat has long been safely held by the PM – but potential changes to copyright laws are angering its large creative communityGet our daily political email, free app or daily news podcastThe prime…"
+   },
+   {
     "title": "Generalized belief states in transformers",
     "url": "https://www.lesswrong.com/posts/4f9p7brLdnTMFuwfB/generalized-belief-states-in-transformers-1",
     "source": "LessWrong",
@@ -552,41 +587,6 @@
     "source": "LessWrong",
     "date": "2026-10-31T02:40:57+00:00",
     "summary": "In 2017, after \n\ngetting\nlaid off from a startup, I spent a while \n\nlooking into AI\nrisk:\n\n\n\n\n\n\n\n\n\nMany people I respect have started to think that AI risk is the most\nvaluable place to focus EA efforts. For example,…"
-   },
-   {
-    "title": "Low-volume cymbals are underrated",
-    "url": "https://www.lesswrong.com/posts/d9XXgp8H9whdtRLTR/low-volume-cymbals-are-underrated",
-    "source": "LessWrong",
-    "date": "2026-10-31T02:05:18+00:00",
-    "summary": "This is my first attempt to write anything for LessWrong, so I'm going to start with something where I feel reasonably comfortable speaking from direct experience.I'm a drummer for a comedy nu-metal band that often…"
-   },
-   {
-    "title": "John Holt’s Escape from Childhood: Summary",
-    "url": "https://www.lesswrong.com/posts/NCpEMknDtRbyCGL5B/john-holt-s-escape-from-childhood-summary",
-    "source": "LessWrong",
-    "date": "2026-10-31T01:52:37+00:00",
-    "summary": "I’ve disliked the idea of childhood since before I can remember (at least, if my mother is to be believed). I felt that people didn’t quite see me as a person — and I could never understand why everyone else was so okay…"
-   },
-   {
-    "title": "Childhood and Education #22: Voice Without Exit",
-    "url": "https://www.lesswrong.com/posts/2STd6qthbJS6fqxBr/childhood-and-education-22-voice-without-exit",
-    "source": "LessWrong",
-    "date": "2026-10-30T20:30:53+00:00",
-    "summary": "Nikole Hannah-Jones wrote a brave self-critical piece in The New York Times, centrally about how she intentionally sent her daughter to a well-funded but failing school, PS 307, in the hopes of using voice to improve…"
-   },
-   {
-    "title": "I read Anthropic's 92-page risk factor document, so you don't have to – video explainer",
-    "url": "https://www.theguardian.com/global/video/2026/oct/30/anthropic-92-page-risk-factor-document-ipo-filing-video-explainer",
-    "source": "The Guardian",
-    "date": "2026-10-30T19:57:13+00:00",
-    "summary": "Anthropic, the creator of Claude, filed to go public on the US stock market on 26 October. The company's filing statement contains a 92-page risk factor document in which it acknowledges the dangers that AI poses to…"
-   },
-   {
-    "title": "The Advocacy Gap in International AI Verification",
-    "url": "https://www.lesswrong.com/posts/pc38q4fMMpGdsFaRv/the-advocacy-gap-in-international-ai-verification",
-    "source": "LessWrong",
-    "date": "2026-10-30T19:33:03+00:00",
-    "summary": "TL;DR: There seems to be a general lack of awareness of how tractable/feasible verification mechanisms for international AI governance agreements are, and correcting this would probably make pacing proposals more…"
    }
   ]
  }
