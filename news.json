@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-01T05:59:31+00:00",
+ "updated": "2026-11-01T13:19:49+00:00",
  "windows": {
   "art": [
    {
@@ -89,6 +89,20 @@
   ],
   "film": [
    {
+    "title": "Valladolid Festival Prizes: Alain Gomis’ ‘Dao’ Wins Golden Spike, ‘La Gradiva’ Takes Silver",
+    "url": "https://variety.com/2026/film/global/valladolid-prizes-dao-la-gradiva-lisandro-alonso-1236936281/",
+    "source": "Variety",
+    "date": "2026-11-01T13:02:00+00:00",
+    "summary": "French-Senegalese filmmaker Alain Gomis’ “Dao,” an expansive family saga spanning Europe and Africa, was awarded the Golden Spike for best film at Spain’s 71st Valladolid International Film Festival (Seminci) while…"
+   },
+   {
+    "title": "Romeo + Juliet at 30: how Baz Luhrmann made teens fall in love with Shakespeare",
+    "url": "https://www.theguardian.com/film/2026/nov/01/baz-luhrmann-romeo-and-juliet-turns-30",
+    "source": "The Guardian",
+    "date": "2026-11-01T10:00:08+00:00",
+    "summary": "The maximalist, heart over head adaptation of the romantic tragedy made stars of its leads and became an English teacher’s most trusted weapon for Bard-averse studentsRomeo + Juliet is not the most renowned or beloved…"
+   },
+   {
     "title": "Robert Downey Jr. & Pedro Pascal Serve MCU Role Reversal For Halloween: “Costume Swap!”",
     "url": "https://deadline.com/2026/10/robert-downey-jr-pedro-pascal-mcu-role-reversal-halloween-1237210827/",
     "source": "Deadline",
@@ -157,23 +171,23 @@
     "source": "Deadline",
     "date": "2026-10-31T23:28:09+00:00",
     "summary": "As Taika Waititi’s latest directorial effort gets its time in the sun, he has some choice words for critics attempting to rain on his parade. On Saturday, the Oscar winner boasted about Klara and the Sun‘s 78% Rotten…"
-   },
-   {
-    "title": "Tokyo Asian Future Drama ‘Jani Be Good’ Probes Silence and Motherhood in a Chinese-Indonesian Family, Marking Ariani Darmawan’s Return",
-    "url": "https://variety.com/2026/film/festivals/tokyo-drama-jani-be-good-silence-motherhood-1236936404/",
-    "source": "Variety",
-    "date": "2026-10-31T22:53:36+00:00",
-    "summary": "Indonesian filmmaker Ariani Darmawan stepped away from directing for years to raise a family. Her first feature, “Jani Be Good,” which is playing in the Tokyo International Film Festival’s Asian Future competition,…"
-   },
-   {
-    "title": "‘Green Room’ Director Remembers Patrick Stewart as a ‘F—ing Sweetheart’ and Credits Him for Rescuing the Film: He ‘Swooped Down’ ‘Into Our Cruddy Ass Movie and Saved Us’",
-    "url": "https://variety.com/2026/film/news/green-room-director-patrick-stewart-1236936405/",
-    "source": "Variety",
-    "date": "2026-10-31T22:45:48+00:00",
-    "summary": "“Green Room” writer and director Jeremy Saulnier paid tribute to late actor Patrick Stewart, who starred in the film and whom he credits with saving the day when they were “close to shutting down,” during a…"
    }
   ],
   "theatre": [
+   {
+    "title": "From Harry Potter to Hamlet: Sam Blenkin’s bold new West End role",
+    "url": "https://www.standard.co.uk/culture/theatre/london-sam-blenkin-hamlet-west-end-radiohead-b1302831.html",
+    "source": "Evening Standard",
+    "date": "2026-11-01T10:33:55+00:00",
+    "summary": "The rising star discusses taking on Shakespeare’s most famous role in a bold reimagining soundtracked by Radiohead"
+   },
+   {
+    "title": "Dafne Keen and Harriet Walter on working with Patrick Stewart: ‘I’ve never seen anyone so ecstatic’",
+    "url": "https://www.theguardian.com/culture/2026/nov/01/dafne-keen-and-harriet-walter-on-working-with-patrick-stewart-ive-never-seen-anyone-so-ecstatic",
+    "source": "The Guardian",
+    "date": "2026-11-01T08:00:06+00:00",
+    "summary": "The late actor’s co-stars in Logan and Anthony and Cleopatra remember dog impressions, marching band-conducting and a fervent belief in funI had the unbelievable privilege of working with Patrick when I was 11 [in…"
+   },
    {
     "title": "The best theatre to stream this month: the Gisèle Pelicot trial becomes an all-star play that ‘just floors you’",
     "url": "https://www.theguardian.com/stage/2026/nov/01/the-best-theatre-to-stream-this-month-the-pelicot-trial-ita-music-damien-jalet-arcadia-salt",
@@ -201,13 +215,6 @@
     "source": "The Guardian",
     "date": "2026-10-30T13:15:43+00:00",
     "summary": "With his striking voice, so rich and resonant, the actor blazed through the RSC – and his time in Hollywood only enriched him. Yet he was a great team player, capable of anything, as his double acts with Ian McKellen…"
-   },
-   {
-    "title": "Middlemarch review – World’s Greatest Novel hurtles from deathbed panto to jolting marital tragedy",
-    "url": "https://www.theguardian.com/stage/2026/oct/29/middlemarch-review-swan-theatre-stratford-upon-avon-worlds-greatest-novel-george-eliot",
-    "source": "The Guardian",
-    "date": "2026-10-29T16:40:40+00:00",
-    "summary": "Swan theatre, Stratford-Upon-AvonThis RSC staging of the sprawling middle England masterpiece has humour, compassion – and even George Eliot herself as a characterIs there a literary achievement greater than George…"
    },
    {
     "title": "The Sea review – Jennifer Saunders takes fussing over buying curtains to Shakespearean levels",
@@ -250,13 +257,6 @@
     "source": "The Guardian",
     "date": "2026-10-26T05:00:23+00:00",
     "summary": "Park theatre, LondonThis adaptation is perhaps too smooth but is well-staged and performed, and draws strong feeling from the pianist’s compositionsThe idea of turning the survival story of the Polish pianist Władysław…"
-   },
-   {
-    "title": "Derren Brown turns into Nostradamus – and I predict you’ll submit to one gasp-inducing stunt after another",
-    "url": "https://www.theguardian.com/stage/2026/oct/25/derren-brown-only-human-review-gasp-inducing-stunts-apollo-london",
-    "source": "The Guardian",
-    "date": "2026-10-25T06:00:53+00:00",
-    "summary": "Apollo theatre, LondonProphecies are impossibly fulfilled by the superstar who takes his cue from the legendary French seer in his show Only HumanDo we have free will – or are the words I am about to write, the four…"
    }
   ],
   "bridge": [
@@ -333,6 +333,13 @@
   ],
   "music": [
    {
+    "title": "Strauss: An Alpine Symphony album review – monumental work’s mystic vision guides Petrenko",
+    "url": "https://www.theguardian.com/music/2026/nov/01/strauss-an-alpine-symphony-album-review",
+    "source": "The Guardian",
+    "date": "2026-11-01T08:00:07+00:00",
+    "summary": "RPO/Petrenko(Harmonia Mundi)Vasily Petrenko and the Royal Philharmonic’s take on Strauss’s tone poem is full of darkness and light, with an impressionist’s eye for detailsThis is the third recording of Richard Strauss’s…"
+   },
+   {
     "title": "Rediscovering the kapellmeister of Auschwitz",
     "url": "https://slippedisc.com/2026/10/rediscovering-the-kapellmeister-of-auschwitz/?utm_source=rss&utm_medium=rss&utm_campaign=rediscovering-the-kapellmeister-of-auschwitz",
     "source": "Slipped Disc",
@@ -408,16 +415,16 @@
     "source": "Slipped Disc",
     "date": "2026-10-30T13:19:27+00:00",
     "summary": "Oh yes there is. The Lucerne Symphony Orchestra...\nThe post Not another conducting competition… appeared first on Slippedisc."
-   },
-   {
-    "title": "Horror: Oberlin College professor and wife found shot",
-    "url": "https://slippedisc.com/2026/10/horror-oberlin-college-professor-and-wife-found-shot/?utm_source=rss&utm_medium=rss&utm_campaign=horror-oberlin-college-professor-and-wife-found-shot",
-    "source": "Slipped Disc",
-    "date": "2026-10-30T13:12:53+00:00",
-    "summary": "From ABC News: A professor at Ohio’s Oberlin...\nThe post Horror: Oberlin College professor and wife found shot appeared first on Slippedisc."
    }
   ],
   "food": [
+   {
+    "title": "Moods, Leeds LS2: ‘Puzzling, if not quite a car crash’ – restaurant review",
+    "url": "https://www.theguardian.com/food/2026/nov/01/moods-leeds-ls2-grace-dent-restaurant-review",
+    "source": "The Guardian",
+    "date": "2026-11-01T06:00:05+00:00",
+    "summary": "The crumpet has the texture of a damp Always UltraI’ve done some fairly rash things in my time, but I’ve never popped into anywhere for king scallops with ’nduja and come out with a swallow tattoo on my neck, though…"
+   },
    {
     "title": "‘Like Saddam opened a Cheesecake Factory’: how did the restaurant end up in a Maga fight over ‘elitism’?",
     "url": "https://www.theguardian.com/us-news/2026/oct/28/cheesecake-factory-obama-trump",
@@ -494,16 +501,16 @@
     "source": "The Guardian",
     "date": "2026-10-16T05:00:51+00:00",
     "summary": "US research says nitrogen dioxide in restaurants that cook with gas can exceed WHO limits, which also affects dinersEach time we enjoy a meal out or order a takeaway, someone cooks for us in a commercial kitchen. In the…"
-   },
-   {
-    "title": "Tip or skip? How US-style tipping culture is creeping into Australia",
-    "url": "https://www.theguardian.com/lifeandstyle/2026/oct/15/tip-or-skip-how-us-style-tipping-culture-is-creeping-into-australia",
-    "source": "The Guardian",
-    "date": "2026-10-14T14:00:05+00:00",
-    "summary": "The rise of cashless prompt screens is compelling customers to tip to avoid awkwardness rather than reward service. But who actually pockets the gratuity?Get our weekend culture and lifestyle emailIn an increasingly…"
    }
   ],
   "doom": [
+   {
+    "title": "Monitor Evasion Depends on What RL Finds and What Monitors Miss",
+    "url": "https://www.lesswrong.com/posts/moDKmh4GerCjfB5mM/monitor-evasion-depends-on-what-rl-finds-and-what-monitors",
+    "source": "LessWrong",
+    "date": "2026-11-01T12:22:07+00:00",
+    "summary": "Training against a monitor does not necessarily make a model more honest. Baker et al. (2025) showed that penalizing suspicious chain-of-thought can make models hide reward hacking rather than stop it. Cundy and Gleave…"
+   },
    {
     "title": "Refelting My Keyboard",
     "url": "https://www.lesswrong.com/posts/nsHdsqZsgNui6eGo6/refelting-my-keyboard",
@@ -580,13 +587,6 @@
     "source": "LessWrong",
     "date": "2026-10-31T16:15:37+00:00",
     "summary": "Many thanks to Xavier Poncini, Paul Riechers, Fernando Rosas, and Matt Smith for useful conversations.\n1. Introduction\nDespite the recent successes of transformers and other sequence models, there are still many open…"
-   },
-   {
-    "title": "A-listers and AI stylists: how high-street brands are staging a fashion comeback",
-    "url": "https://www.theguardian.com/fashion/2026/oct/31/a-listers-ai-stylists-high-street-brands-fashion-comeback",
-    "source": "The Guardian",
-    "date": "2026-10-31T16:00:47+00:00",
-    "summary": "Gap, M&S, Topshop and more are taking a leaf from luxury label playbooks to satisfy savvier generation of shoppersHigh street brands that boomed in the noughties before the squeeze of both sustainably minded consumers…"
    }
   ]
  }
