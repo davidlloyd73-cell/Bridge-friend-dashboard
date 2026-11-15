@@ -5,14 +5,15 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { celebrate } from "./celebrations.js?v=20261024d";
-import { buildRecap, nightLines } from "./recap.js?v=20261024d";
-import { CONFIG } from "./config.js?v=20261024d";
+import { celebrate } from "./celebrations.js?v=20261115a";
+import { buildRecap, nightLines } from "./recap.js?v=20261115a";
+import { initCommentator } from "./commentator.js?v=20261115a";
+import { CONFIG } from "./config.js?v=20261115a";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261024d";
+} from "./data.js?v=20261115a";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -1476,6 +1477,12 @@ function init() {
     setTimeout(() => { recap.textContent = "📋 Copy recap"; }, 2500);
   });
 
+  initCommentator({
+    button: $("#state-of-play"),
+    host: $("#commentator"),
+    getModel: () => lastGoodModel,
+  });
+
   // Sortable table headers.
   document.querySelectorAll("#standings-table th.sortable").forEach((th) => {
     th.addEventListener("click", () => {
@@ -1545,4 +1552,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261024d";
+export { buildModel, parseUKDate } from "./data.js?v=20261115a";

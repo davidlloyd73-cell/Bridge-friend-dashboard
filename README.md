@@ -113,6 +113,7 @@ Open that URL — the dashboard is live. 🎉
 | `app.js`     | Fetches the sheet, parses it defensively, computes all the stats, renders, and runs the 60-second polling loop. |
 | `config.js`  | **The file you edit.** API key, sheet ID, range, refresh interval, form link, the current **round**, and when one **night** of play ends. |
 | `data.js`    | Shared fetch/parse/compute — used by both `app.js` and `race.js` so the two pages can't disagree. |
+| `commentator.js` | The **🎙 State of play** button on the Tonight tab: a cartoon owl ("The Kibitzer") reads out who won the last hand, who leads tonight and who is allowed to whinge (fewest HCP dealt). Uses the browser's built-in speech — no key, no AI service, nothing leaves the page; if the device can't speak, the speech bubble steps through the same sentences silently. |
 | `race.html` / `race.js` / `race.css` | The live "Race to 50,000" page. |
 | `README.md`  | This file. |
 
@@ -190,7 +191,7 @@ carry the **same** query on their `./data.js` and `./config.js` imports, and
 change anything, bump that value **everywhere** — each of those is a separate
 fetch, so bumping only the `<script>` tags would leave browsers running a cached
 `data.js` (where most of the logic lives) or a cached `tokens.css` (where every
-colour lives). Thirteen places in total; grep for the current value to find them.
+colour lives). Fifteen places in total; grep for the current value to find them.
 
 ### Player colours
 David = **blue**, Vivienne = **green**, Hamish = **orange**, Caroline =

@@ -7,7 +7,7 @@
 // doesn't replay old news.
 // =============================================================================
 
-import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261024d";
+import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261115a";
 
 const SUITS = { clubs: "♣", diamonds: "♦", hearts: "♥", spades: "♠", "no trumps": "NT", notrumps: "NT", nt: "NT" };
 
