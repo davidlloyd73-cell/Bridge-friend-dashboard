@@ -191,7 +191,7 @@ carry the **same** query on their `./data.js` and `./config.js` imports, and
 change anything, bump that value **everywhere** — each of those is a separate
 fetch, so bumping only the `<script>` tags would leave browsers running a cached
 `data.js` (where most of the logic lives) or a cached `tokens.css` (where every
-colour lives). Fifteen places in total; grep for the current value to find them.
+colour lives). Twenty places in total; grep for the current value to find them.
 
 ### Player colours
 David = **blue**, Vivienne = **green**, Hamish = **orange**, Caroline =
