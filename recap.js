@@ -4,7 +4,7 @@
 // Pure: takes the model, returns a string. No DOM, so it can be tested alone.
 // =============================================================================
 
-import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261115a";
+import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261115b";
 
 const MEDALS = ["🥇", "🥈", "🥉", "4️⃣"];
 const SUITS = { clubs: "♣", diamonds: "♦", hearts: "♥", spades: "♠", "no trumps": "NT", notrumps: "NT", nt: "NT" };

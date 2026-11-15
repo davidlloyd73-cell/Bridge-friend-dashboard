@@ -11,7 +11,7 @@
 // bubble steps through the same sentences in silence.
 // =============================================================================
 
-import { PLAYERS, fmtNum } from "./data.js?v=20261115a";
+import { PLAYERS, fmtNum } from "./data.js?v=20261115b";
 
 const SUIT_WORDS = {
   clubs: "clubs", diamonds: "diamonds", hearts: "hearts", spades: "spades",
@@ -137,22 +137,31 @@ export function buildCommentary(m, now = Date.now()) {
 // ---------------------------------------------------------------------------
 // The owl. Drawn here rather than loaded, so there is nothing extra to fetch.
 // Colours come from the page's own tokens (see .commentator in styles.css).
+// Built in parts — head, brows, lids, pupils, jaw, wings — so each can move.
 // ---------------------------------------------------------------------------
 const OWL_SVG = `
-<svg class="owl" viewBox="0 0 120 130" role="img" aria-label="The Kibitzer, a cartoon owl in a bow tie">
-  <ellipse class="owl-shadow" cx="60" cy="124" rx="30" ry="4"/>
-  <path class="owl-body" d="M24 62 C20 28 36 12 60 12 C84 12 100 28 96 62 C100 96 84 116 60 116 C36 116 20 96 24 62 Z"/>
-  <path class="owl-body" d="M30 22 L26 4 L46 16 Z M90 22 L94 4 L74 16 Z"/>
-  <path class="owl-belly" d="M38 74 C38 58 82 58 82 74 C84 98 74 110 60 110 C46 110 36 98 38 74 Z"/>
-  <path class="owl-wing" d="M24 62 C16 74 18 94 30 102 C30 86 30 74 24 62 Z M96 62 C104 74 102 94 90 102 C90 86 90 74 96 62 Z"/>
-  <circle class="owl-eye" cx="44" cy="44" r="15"/><circle class="owl-eye" cx="76" cy="44" r="15"/>
-  <g class="owl-pupils"><circle cx="46" cy="45" r="6"/><circle cx="74" cy="45" r="6"/></g>
-  <g class="owl-glint"><circle cx="48" cy="42" r="2"/><circle cx="76" cy="42" r="2"/></g>
-  <g class="owl-lids"><rect x="29" y="29" width="30" height="15" rx="7"/><rect x="61" y="29" width="30" height="15" rx="7"/></g>
-  <path class="owl-beak" d="M52 56 L68 56 L60 64 Z"/>
-  <path class="owl-beak owl-jaw" d="M54 60 L66 60 L60 68 Z"/>
-  <path class="owl-bow" d="M60 76 L44 68 L44 84 Z M60 76 L76 68 L76 84 Z"/><circle class="owl-knot" cx="60" cy="76" r="4"/>
-  <path class="owl-feet" d="M44 116 l-6 7 h6 l2 -4 l2 4 h6 l-6 -7 Z M72 116 l-6 7 h6 l2 -4 l2 4 h6 l-6 -7 Z"/>
+<svg class="owl" viewBox="0 0 140 150" role="img" aria-label="The Kibitzer, a cartoon owl in a bow tie">
+  <ellipse class="owl-shadow" cx="70" cy="144" rx="34" ry="4"/>
+  <g class="owl-all">
+    <path class="owl-feet" d="M52 134 l-7 8 h7 l2 -5 l2 5 h7 l-7 -8 Z M84 134 l-7 8 h7 l2 -5 l2 5 h7 l-7 -8 Z"/>
+    <path class="owl-wing owl-wing-l" d="M32 78 C14 88 12 114 26 128 C36 114 40 94 32 78 Z"/>
+    <path class="owl-wing owl-wing-r" d="M108 78 C126 88 128 114 114 128 C104 114 100 94 108 78 Z"/>
+    <ellipse class="owl-body" cx="70" cy="98" rx="40" ry="40"/>
+    <ellipse class="owl-belly" cx="70" cy="106" rx="25" ry="28"/>
+    <g class="owl-head">
+      <path class="owl-body" d="M36 32 L28 4 L58 20 Z M104 32 L112 4 L82 20 Z"/>
+      <ellipse class="owl-body" cx="70" cy="50" rx="42" ry="36"/>
+      <circle class="owl-eye" cx="52" cy="48" r="16"/><circle class="owl-eye" cx="88" cy="48" r="16"/>
+      <g class="owl-pupils"><circle cx="54" cy="49" r="7"/><circle cx="86" cy="49" r="7"/></g>
+      <g class="owl-glint"><circle cx="56" cy="46" r="2.3"/><circle cx="88" cy="46" r="2.3"/></g>
+      <g class="owl-lids"><rect x="35" y="31" width="34" height="34" rx="16"/><rect x="71" y="31" width="34" height="34" rx="16"/></g>
+      <path class="owl-brow owl-brow-l" d="M38 29 L62 27"/><path class="owl-brow owl-brow-r" d="M102 29 L78 27"/>
+      <path class="owl-mouth" d="M61 66 L79 66 L70 79 Z"/>
+      <path class="owl-jaw" d="M61 66 L79 66 L70 79 Z"/>
+      <path class="owl-beak" d="M59 61 L81 61 L70 75 Z"/>
+    </g>
+    <path class="owl-bow" d="M70 88 L54 80 L54 96 Z M70 88 L86 80 L86 96 Z"/><circle class="owl-knot" cx="70" cy="88" r="4"/>
+  </g>
 </svg>`;
 
 /** A British voice if the device has one, else whatever speaks English. */
@@ -161,6 +170,13 @@ function pickVoice(synth) {
   return voices.find((v) => /^en[-_]GB/i.test(v.lang) && v.localService) ||
     voices.find((v) => /^en[-_]GB/i.test(v.lang)) ||
     voices.find((v) => /^en/i.test(v.lang)) || null;
+}
+
+/** How the owl should look while saying a sentence. */
+function moodOf(line) {
+  if (/whinge|nobody will listen/i.test(line)) return "glum";
+  if (/\bleads\b|level at the top|made it|collected|best cards/i.test(line)) return "cheer";
+  return "";
 }
 
 /**
@@ -175,6 +191,9 @@ export function initCommentator({ button, host, getModel }) {
   const LABEL = button.textContent;
   let run = 0;          // bumped on every start/stop, so stale callbacks do nothing
   let timer = null;
+  let chatter = null;   // the interval that works the beak
+  let quiet = null;     // closes the beak at the end of a silent caption
+  let side = 0;         // which wing gestures next
 
   host.innerHTML = `
     <div class="commentator-figure">${OWL_SVG}<span class="commentator-name">The Kibitzer</span></div>
@@ -188,25 +207,55 @@ export function initCommentator({ button, host, getModel }) {
   const bubble = host.querySelector(".commentator-bubble");
   if (synth) synth.getVoices(); // some browsers only load the list once asked
 
+  // ---- The beak. Driven from here rather than by a CSS loop, so it only
+  // moves while a sentence is actually being said and shuts between them.
+  const beak = (open) => host.style.setProperty("--beak", String(open));
+  function mouthOn() {
+    mouthOff();
+    host.classList.add("speaking");
+    let n = 0;
+    chatter = setInterval(() => {
+      n += 1;
+      // Mostly open-shut syllables, with the odd held-shut beat for a breath.
+      beak(n % 2 ? 0.35 + Math.random() * 0.65 : Math.random() < 0.3 ? 0 : 0.15 + Math.random() * 0.25);
+    }, 95);
+  }
+  function mouthOff() {
+    clearInterval(chatter); chatter = null;
+    clearTimeout(quiet);
+    host.classList.remove("speaking");
+    beak(0);
+  }
+
   function show(lines, i) {
     text.textContent = lines[i];
     step.textContent = `${i + 1} of ${lines.length}`;
+    // A new sentence: change expression and gesture with alternate wings.
+    host.classList.remove("mood-cheer", "mood-glum", "wave-l", "wave-r");
+    const mood = moodOf(lines[i]);
+    if (mood) host.classList.add("mood-" + mood);
+    void host.offsetWidth;                       // restart the wave animation
+    host.classList.add((side ^= 1) ? "wave-l" : "wave-r");
   }
 
   function finish(id) {
     if (id !== run) return;
-    host.classList.remove("talking");
+    mouthOff();
+    host.classList.remove("talking", "mood-cheer", "mood-glum", "wave-l", "wave-r");
     button.textContent = LABEL;
     step.textContent = "Press the button to hear it again.";
   }
 
-  /** Silent version: step the bubble through at reading pace. */
+  /** Silent version: step the bubble through at reading pace, beak still going. */
   function captionsOnly(lines, id, i = 0) {
     if (id !== run) return;
     if (i >= lines.length) return finish(id);
     bubble.setAttribute("aria-live", "polite");
     show(lines, i);
-    timer = setTimeout(() => captionsOnly(lines, id, i + 1), 1400 + lines[i].length * 55);
+    const talkMs = 600 + lines[i].length * 55;
+    mouthOn();
+    quiet = setTimeout(() => { if (id === run) mouthOff(); }, talkMs);
+    timer = setTimeout(() => captionsOnly(lines, id, i + 1), talkMs + 800);
   }
 
   function speak(lines, id) {
@@ -220,8 +269,11 @@ export function initCommentator({ button, host, getModel }) {
       const u = new SpeechSynthesisUtterance(line);
       if (voice) { u.voice = voice; u.lang = voice.lang; } else u.lang = "en-GB";
       u.rate = 1; u.pitch = 1.1;
-      u.onstart = () => { if (id === run) { started = true; show(lines, i); } };
-      if (i === lines.length - 1) u.onend = () => finish(id);
+      u.onstart = () => { if (id === run) { started = true; show(lines, i); mouthOn(); } };
+      // Where the browser reports word boundaries, shut the beak on each one,
+      // which keeps it roughly in step with the words.
+      u.onboundary = () => { if (id === run) beak(0); };
+      u.onend = () => { if (id !== run) return; mouthOff(); if (i === lines.length - 1) finish(id); };
       u.onerror = () => { if (id === run && !started) { run += 1; captionsOnly(lines, run); } };
       synth.speak(u);
     });
@@ -238,7 +290,8 @@ export function initCommentator({ button, host, getModel }) {
     run += 1;
     clearTimeout(timer);
     if (synth) synth.cancel();
-    host.classList.remove("talking");
+    mouthOff();
+    host.classList.remove("talking", "mood-cheer", "mood-glum", "wave-l", "wave-r");
     button.textContent = LABEL;
   }
 

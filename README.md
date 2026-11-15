@@ -113,7 +113,7 @@ Open that URL — the dashboard is live. 🎉
 | `app.js`     | Fetches the sheet, parses it defensively, computes all the stats, renders, and runs the 60-second polling loop. |
 | `config.js`  | **The file you edit.** API key, sheet ID, range, refresh interval, form link, the current **round**, and when one **night** of play ends. |
 | `data.js`    | Shared fetch/parse/compute — used by both `app.js` and `race.js` so the two pages can't disagree. |
-| `commentator.js` | The **🎙 State of play** button on the Tonight tab: a cartoon owl ("The Kibitzer") reads out who won the last hand, who leads tonight and who is allowed to whinge (fewest HCP dealt). Uses the browser's built-in speech — no key, no AI service, nothing leaves the page; if the device can't speak, the speech bubble steps through the same sentences silently. |
+| `commentator.js` | The **🎙 State of play** button on the Tonight tab: a cartoon owl ("The Kibitzer") reads out who won the last hand, who leads tonight and who is allowed to whinge (fewest HCP dealt). Uses the browser's built-in speech — no key, no AI service, nothing leaves the page; if the device can't speak, the speech bubble steps through the same sentences silently. The owl is animated: its beak moves only while a sentence is being said, a wing lifts at each new sentence, and it looks pleased for good news and glum for the whinge. With "reduce motion" switched on, the swaying and waving stop but the beak and expressions stay. |
 | `race.html` / `race.js` / `race.css` | The live "Race to 50,000" page. |
 | `README.md`  | This file. |
 
