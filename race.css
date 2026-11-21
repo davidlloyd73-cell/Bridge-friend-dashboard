@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20261121g");
+@import url("tokens.css?v=20261121h");
 
 /* =============================================================================
    race.css — "Race to 50,000" live page
@@ -153,6 +153,8 @@ main {
 .pf-sub { margin-top: 4px; font-size: 1rem; color: var(--ink); }
 .pf-sub b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .pf-extra { margin-top: 6px; font-size: .85rem; color: var(--ink-soft); }
+.pf-trophy { float: right; width: clamp(96px, 22vw, 170px); height: auto; margin: -6px -6px 4px 14px; border-radius: 12px; }
+.photo-finish::after { content: ""; display: block; clear: both; }
 
 /* ---------- Panels ---------- */
 .panel {

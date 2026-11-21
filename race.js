@@ -4,11 +4,11 @@
 // always match the main dashboard's round-total column exactly.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261121g";
+import { CONFIG } from "./config.js?v=20261121h";
 import {
   PLAYERS, COLORS, fmtNum, fmtDate, fmtClock, escapeHtml, fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261121g";
+} from "./data.js?v=20261121h";
 
 // Both the target and the round's name come from CONFIG.ROUND — see config.js.
 const TARGET = CONFIG.ROUND.TARGET;
@@ -99,6 +99,7 @@ function renderBanner(race) {
   el.hidden = false;
   el.style.setProperty("--pf-color", color);
   el.innerHTML = `
+    <img class="pf-trophy" src="art/trophy-512.webp" width="512" height="570" alt="Cartoon trophy with an owl applauding on its rim">
     <div class="pf-main">🏁 ${names} ${shared ? "share the win" : "is home"}! ${escapeHtml(ROUND.LABEL)} is won.</div>
     <div class="pf-sub">First to ${fmtNum(TARGET)}: hand ${escapeHtml(f.handNo)}, ${escapeHtml(f.sessionLabel)}, on <b>${fmtNum(f.totalsAtLine[race.winner])}</b>.</div>
     <div class="pf-extra">The round runs to the end of this session, so the totals below still count tonight's hands. ${escapeHtml(nextLabel())} starts on its own the next time you play.</div>`;

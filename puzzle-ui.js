@@ -9,7 +9,7 @@
 
 import {
   makeProblem, legalBids, bidText, parseCard, cardId, rankStr, SYM, SEAT_NAME,
-} from "./bridge-puzzle.js?v=20261121g";
+} from "./bridge-puzzle.js?v=20261121h";
 
 const STORE = "bridgePuzzleStreak";
 const RED = new Set([1, 2]); // diamonds, hearts

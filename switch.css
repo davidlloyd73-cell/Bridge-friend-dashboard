@@ -42,7 +42,13 @@
 /* Keep it clear of the page edges on a narrow phone. */
 .page-switch-wrap { padding: 0 16px; }
 
-html.framed .page-switch-wrap { display: none; }
+html.framed .page-switch-wrap, html.framed .page-banner { display: none; }
+
+/* Cartoon banner under the switch on the Bridge page. */
+.page-banner { max-width: 1040px; margin: 12px auto 0; padding: 0 16px; }
+.page-banner img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 1; object-fit: cover; object-position: 50% 0%;
+  border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow); }
+@media (max-width: 560px) { .page-banner img { aspect-ratio: 2.6 / 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   .page-switch a { transition: none; }
