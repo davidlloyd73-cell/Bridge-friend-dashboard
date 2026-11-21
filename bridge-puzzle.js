@@ -195,7 +195,14 @@ export function openingBidFor(h) {
   const sorted = [...h.len].sort((a, b) => b - a);
   const r20 = h.hcp + sorted[0] + sorted[1];
   if (h.hcp >= 23) return { answer: "2C", why: `${h.hcp} points: 23+ opens 2♣, then rebid your longest suit.`, card: "Card 17 · 2♣ opening" };
-  if (h.hcp >= 20) return null; // with weak twos, card 18 says what to open — not photographed yet
+  if (h.hcp >= 20) {
+    // Three Weak Twos (Conventions p9): 2♦/2♥/2♠ are weak, so a 20–22
+    // unbalanced hand opens one of a suit (card 18's strong twos are for
+    // partnerships not playing weak twos). A long suit might be "eight playing
+    // tricks" for 2♣ (card 17): judgement, so skip those.
+    if (sorted[0] >= 6) return null;
+    return { answer: bid(1, s), why: `Unbalanced with ${h.hcp} points. Playing weak twos ("Three Weak Twos"), a 20–22 hand can't open two of a suit, so open one of your longest suit (${name})${tieNote(h)} and show the strength next time.`, card: "Conventions p9 · Three Weak Twos" };
+  }
   const sum = `${h.hcp} points + ${sorted[0]} + ${sorted[1]} cards = ${r20}`;
   const L = sorted[0], longS = [0, 1, 2, 3].filter((x) => h.len[x] === L);
   // Pre-empts (cards 22, 23): a good long suit (two+ honours) and a weak hand.
@@ -933,9 +940,27 @@ function genOpener2NT(rand) {
 
 /** Cards 22, 23 — partner pre-empted. "Put up or shut up". */
 export function respondPreempt(h, s, level) {
-  const card = level === 2 ? "Card 22 · Responding to a weak two" : "Card 23 · Responding to a three-opener";
   const pLen = level === 2 ? 6 : 7, fit = h.len[s] + pLen;
   const a = acesIn(h);
+  const lofAnswer = (pre) => {
+    if (fit >= 11) return null;
+    const lof = fit - 6;
+    const ans = lof > level ? bid(lof, s) : "P";
+    return { answer: ans, why: `${pre} You have ${h.len[s] <= 1 ? shortHolding(h.len[s], s) : `${h.len[s]} ${SUIT_NAME[s]}`}, partner ${pLen}, so ${fit} between you: ${lof > level ? `bid for ${fit} tricks, ${lof}${SYM[s]}` : "no higher than partner's bid — pass"}.` };
+  };
+  if (level === 2) {
+    const card = "Conventions p9 · Responding to a weak two";
+    if (h.hcp <= 14) { const r = lofAnswer(`Game? No — ${h.hcp} points (up to 14): pass or bid to the level of the fit.`); return r && { ...r, card }; }
+    if (h.hcp <= 17) {
+      const r = { answer: "2N", why: `Game? Maybe — ${h.hcp} points (15–17): bid 2NT, the strong asking bid, and let partner say whether they're minimum or maximum.`, card };
+      // Card 22's own example bids game directly with 16 and a fit, so accept that too.
+      if (s >= 2 && h.len[s] >= 2) return { ...r, answers: ["2N", bid(4, s)], why: `${r.why} (Card 22's example simply bids game, 4${SYM[s]}, with 16 and a fit — that's fine too.)` };
+      return r;
+    }
+    if (s >= 2 && h.len[s] >= 2) return { answer: bid(4, s), why: `Game? Yes — ${h.hcp} points (18+) and a fit: bid game in partner's suit, 4${SYM[s]}.`, card };
+    return null; // 18+ without a fit: 2NT or something else — judgement
+  }
+  const card = "Card 23 · Responding to a three-opener";
   let strong;
   if (h.hcp <= 13) strong = false;
   else if (h.hcp <= 15) { if (a > 0) return null; strong = false; }       // upgrade for aces: unclear
@@ -945,10 +970,8 @@ export function respondPreempt(h, s, level) {
     if (h.len[s] < 2 || s < 2) return null;
     return { answer: bid(4, s), why: `About 16+ (${h.hcp}, with ${plural(a, "ace")}) and a fit (${h.len[s]} ${SUIT_NAME[s]}): put up — bid game, 4${SYM[s]}.`, card };
   }
-  if (fit >= 11) return null;
-  const lof = fit - 6;
-  const ans = lof > level ? bid(lof, s) : "P";
-  return { answer: ans, why: `Under about 16 (${h.hcp}${h.hcp >= 14 ? ", and no aces to upgrade" : ""}): shut up, or raise to the level of the fit. You have ${h.len[s] <= 1 ? shortHolding(h.len[s], s) : `${h.len[s]} ${SUIT_NAME[s]}`}, partner ${pLen}, so ${fit} between you: ${lof > level ? `bid for ${fit} tricks, ${lof}${SYM[s]}` : "no higher than partner's bid — pass"}.`, card };
+  const r = lofAnswer(`Under about 16 (${h.hcp}${h.hcp >= 14 ? ", and no aces to upgrade" : ""}): shut up, or raise to the level of the fit.`);
+  return r && { ...r, card };
 }
 function genRespondPreempt(rand) {
   const h = makeHand(shuffledDeck(rand).slice(0, 13));
@@ -1130,6 +1153,144 @@ function tr(x, youHaveA) {
   return `${who}:${r}`;
 }
 
+
+/** Conventions p9 — you opened a weak two; partner asked with 2NT. */
+export function weakTwoReply(h, s) {
+  const card = "Conventions p9 · Weak two bidder's replies to 2NT";
+  const hon = honours(h, s), score = h.hcp + hon;
+  if (score <= 8) return { answer: bid(3, s), why: `Points + honours in your suit = ${h.hcp} + ${hon} = ${score}: a minimum (8 or fewer), so rebid three of your suit, 3${SYM[s]}.`, card };
+  const pre = `Points + honours in your suit = ${h.hcp} + ${hon} = ${score}: a maximum (9+), so bid something else. `;
+  const otherMajors = [2, 3].filter((m) => m !== s && h.len[m] >= 4);
+  if (otherMajors.length > 1) return null;
+  if (otherMajors.length === 1) return { answer: bid(3, otherMajors[0]), why: `${pre}First priority: four cards in the other major, 3${SYM[otherMajors[0]]}.`, card };
+  const top = h.suits[s].filter((r) => r >= 12).length;
+  if (top >= 2) return { answer: "3N", why: `${pre}No four-card major, but a good suit (two of A/K/Q): 3NT.`, card };
+  if (s === 1) return null; // a 2♦ opener's "better minor": unclear
+  if (h.len[0] === h.len[1]) return null; // "better minor" with equal length: judgement
+  const better = h.len[0] > h.len[1] ? 0 : 1;
+  if (h.len[better] < 3) return null;
+  return { answer: bid(3, better), why: `${pre}No four-card major and no two of the top three honours, so bid your better minor: 3${SYM[better]}.`, card };
+}
+function genWeakTwoReply(rand) {
+  const h = makeHand(shuffledDeck(rand).slice(0, 13));
+  const o = openingBidFor(h);
+  if (!o || !["2D", "2H", "2S"].includes(o.answer)) return null;
+  const s = parseBid(o.answer).strain;
+  const r = weakTwoReply(h, s);
+  if (!r) return null;
+  const calls = [o.answer, "P", "2N", "P"];
+  return { calls: rand() < 0.5 ? calls : ["P", ...calls], hand: h, ...r, tag: "Your weak two" };
+}
+
+/** Conventions p20 — opener's planned rebid after RHO's intervention:
+ *  1m (P) 1M (2Z). If you can still make the planned bid, make it; if not, pass. */
+export function plannedRebid(h, X, Y) {
+  if (h.len[Y] >= 4) return null; // you'd support partner
+  if (h.bal) {
+    if (h.hcp <= 14) return null; // you'd have opened 1NT
+    if (h.hcp <= 16) return { plan: "1N", why: "balanced 15–16, planning to rebid 1NT (no-trumps at the lowest level)" };
+    if (h.hcp <= 18) return { plan: "2N", why: "balanced 17–18, planning to rebid 2NT (a jump in no-trumps)" };
+    if (h.hcp === 19) return { plan: "3N", why: "balanced 19, planning to rebid 3NT" };
+    return null;
+  }
+  if (h.len[X] !== 6 || [0, 1, 2, 3].some((o) => o !== X && h.len[o] >= 4)) return null;
+  if (h.hcp <= 15) return { plan: bid(2, X), why: `six ${SUIT_NAME[X]} and ${h.hcp} points, planning to repeat them at the lowest level, 2${SYM[X]}` };
+  return { plan: bid(3, X), why: `six ${SUIT_NAME[X]} and ${h.hcp} points (16+), planning to repeat them with a jump, 3${SYM[X]}` };
+}
+export function afterIntervention(h, X, Y, Z) {
+  const pl = plannedRebid(h, X, Y);
+  if (!pl) return null;
+  const card = "Conventions p20 · Coping with opposing intervention";
+  const over = bid(2, Z);
+  const stillThere = bidRank(pl.plan) > bidRank(over);
+  if (stillThere && pl.plan.endsWith("N") && stopper(h, Z) !== "yes") return null; // no-trumps without a stopper in their suit
+  if (stillThere) return { answer: pl.plan, why: `You were ${pl.why}. RHO's 2${SYM[Z]} doesn't stop you, so make your planned bid: ${bidText(pl.plan)}.`, card };
+  return { answer: "P", why: `You were ${pl.why}, but RHO's 2${SYM[Z]} has taken that bid away. If you can't make your planned rebid, pass.`, card };
+}
+function genIntervention(rand) {
+  const h = makeHand(shuffledDeck(rand).slice(0, 13));
+  const o = openingBidFor(h);
+  if (!o || !["1C", "1D"].includes(o.answer)) return null;
+  const X = parseBid(o.answer).strain;
+  const Y = pick(rand, [2, 3]);
+  const Zs = [0, 1, 2, 3].filter((z) => z !== X && z !== Y && bidRank(bid(2, z)) > bidRank(bid(1, Y)));
+  if (!Zs.length) return null;
+  const Z = pick(rand, Zs);
+  const r = afterIntervention(h, X, Y, Z);
+  if (!r) return null;
+  const calls = [o.answer, "P", bid(1, Y), bid(2, Z)];
+  return { calls: rand() < 0.5 ? calls : ["P", ...calls], hand: h, ...r, tag: "They intervened" };
+}
+
+/** Card 26 — attitude signal: partner leads the ace (from A-K) against a trump
+ *  contract; you can't win. High encourages, low discourages. */
+export function signalCard(cards, trumpsHeld) {
+  // cards: your holding in the led suit, high to low (no A or K)
+  const hasQ = cards[0] === 12;
+  const spots = cards.filter((r) => r <= 10);
+  if (hasQ) {
+    if (cards.length < 3) return null; // Qx: which card signals? unclear
+    return { r: spots[0], why: `You hold the queen, the honour in sequence with partner's A-K: encourage with a high card, the ${rankStr(spots[0])} ("throw high means aye").` };
+  }
+  if (cards.length === 2 && trumpsHeld && cards[0] <= 10) return { r: cards[0], why: `A doubleton, and you have trumps: encourage with the higher card, the ${rankStr(cards[0])}, so partner continues and you can ruff the third round.` };
+  if (cards.length >= 3 && cards[0] <= 11) return { r: cards[cards.length - 1], why: `Nothing helpful in the suit: discourage with your lowest card, the ${rankStr(cards[cards.length - 1])} ("throw low means no").` };
+  return null;
+}
+function genSignal(rand) {
+  const hands = dealFour(rand);
+  const d = Math.floor(rand() * 4), leader = (d + 1) % 4, dummy = (d + 2) % 4, you = (d + 3) % 4;
+  const T = pick(rand, [2, 3]);
+  const L = pick(rand, [0, 1, 2, 3].filter((x) => x !== T));
+  const p = hands[leader].suits[L], dm = hands[dummy].suits[L], mine = hands[you].suits[L];
+  if (p[0] !== 14 || p[1] !== 13) return null;
+  if (!dm.length || dm[0] >= 11 || dm.length < 2) return null;
+  if (!mine.length || mine[0] >= 13) return null;
+  const sc = signalCard(mine, hands[you].len[T] > 0);
+  if (!sc) return null;
+  const dPlay = dm[dm.length - 1];
+  return {
+    kind: "play", you, declarer: d, dealer: d, hand: hands[you], dummyHand: hands[dummy], dummySeat: dummy,
+    contract: `4${SYM[T]} by ${SEAT_NAME[d]}`,
+    trick: [{ seat: leader, card: cardId(L, 14) }, { seat: dummy, card: cardId(L, dPlay) }],
+    question: `Partner leads the ${cardText(L, 14)} (from A-K); dummy plays the ${cardText(L, dPlay)}. Which card do you play?`,
+    answers: [cardId(L, sc.r)], best: cardId(L, sc.r), why: sc.why,
+    card: "Card 26 · Signalling", tag: "Signalling", follow: L,
+  };
+}
+
+/** Card 13 — scoring doubled contracts (a points quiz). */
+const DOWN = { nv: [100, 300, 500, 800, 1100], v: [200, 500, 800, 1100, 1400] };
+export function doubledScore(kind, n, vul) {
+  if (kind === "down") return DOWN[vul ? "v" : "nv"][n - 1];
+  return n * (vul ? 200 : 100);
+}
+function genScoring(rand) {
+  const vul = rand() < 0.5;
+  const down = rand() < 0.65;
+  const n = down ? 1 + Math.floor(rand() * 5) : 1 + Math.floor(rand() * 3);
+  const level = 1 + Math.floor(rand() * (down ? 5 : 3));
+  const s = Math.floor(rand() * 5);
+  const ans = doubledScore(down ? "down" : "over", n, vul);
+  const pool = new Set([ans]);
+  const alt = down
+    ? [doubledScore("down", n, !vul), n > 1 ? doubledScore("down", n - 1, vul) : 50 * n * (vul ? 2 : 1), n < 5 ? doubledScore("down", n + 1, vul) : ans + 300, n * (vul ? 100 : 50)]
+    : [doubledScore("over", n, !vul), n * (vul ? 100 : 50), doubledScore("over", n + 1, vul), n * 30];
+  alt.forEach((x) => { if (pool.size < 4) pool.add(x); });
+  const options = [...pool].sort((a, b) => a - b).map(String);
+  const vtxt = vul ? "vulnerable" : "not vulnerable";
+  const contract = `${level}${SYM[s]} doubled`;
+  return {
+    kind: "choice", options, answers: [String(ans)], best: String(ans),
+    question: down
+      ? `The opponents play ${contract}, ${vtxt}, and go ${n} down. How many points do you score?`
+      : `You make ${contract}, ${vtxt}, with ${plural(n, "overtrick")}. How many points are the overtricks worth?`,
+    why: down
+      ? `Card 13's undertrick table, ${vtxt}: ${n} down doubled = ${ans} (1 down ${DOWN[vul ? "v" : "nv"][0]}, 2 down ${DOWN[vul ? "v" : "nv"][1]}, 3 down ${DOWN[vul ? "v" : "nv"][2]}...).`
+      : `Doubled overtricks are worth ${vul ? 200 : 100} each ${vtxt}, whatever the suit: ${n} × ${vul ? 200 : 100} = ${ans}. (You also double the trick score below the line and add 50 "for the insult".)`,
+    card: "Card 13 · Scoring doubled contracts", tag: "Scoring",
+  };
+}
+
 // =============================================================================
 // Problem factory
 // =============================================================================
@@ -1153,6 +1314,8 @@ export const TYPES = [
   { key: "resp2nt", kind: "bid", w: 1, make: genRespond2NT },
   { key: "open2nt", kind: "bid", w: 0.7, make: genOpener2NT },
   { key: "preempt", kind: "bid", w: 1.5, make: genRespondPreempt },
+  { key: "weak2reply", kind: "bid", w: 1, make: genWeakTwoReply },
+  { key: "intervention", kind: "bid", w: 1.5, make: genIntervention },
   { key: "bwreply", kind: "bid", w: 0.7, make: genBlackwoodReply },
   { key: "bwask", kind: "bid", w: 0.7, make: genBlackwoodAsker },
   { key: "leadnt", kind: "play", w: 1.5, make: genLeadNT },
@@ -1162,6 +1325,8 @@ export const TYPES = [
   { key: "cover", kind: "play", w: 1, make: genCover },
   { key: "fourth", kind: "play", w: 1, make: genFourthHand },
   { key: "suitplay", kind: "play", w: 2, make: genSuitPlay },
+  { key: "signal", kind: "play", w: 1.5, make: genSignal },
+  { key: "scoring", kind: "play", w: 0.7, make: genScoring },
 ];
 
 // Roughly seven bidding problems for every three card-play ones.
@@ -1184,9 +1349,9 @@ export function makeProblem(seed, onlyType) {
   for (let attempt = 0; attempt < 50000; attempt++) {
     const p = t.make(rand);
     if (!p) continue;
-    if (p.kind === "play" || p.kind === "suit") return { seed, type: t.key, ...p };
+    if (p.kind === "play" || p.kind === "suit" || p.kind === "choice") return { seed, type: t.key, ...p };
     const seat = seating(rand, p.calls);
-    return { seed, type: t.key, kind: "bid", ...seat, ...p, best: p.answer, answers: [p.answer] };
+    return { seed, type: t.key, kind: "bid", ...seat, ...p, best: p.answer, answers: p.answers || [p.answer] };
   }
   return null;
 }

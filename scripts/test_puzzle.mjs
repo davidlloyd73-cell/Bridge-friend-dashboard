@@ -6,6 +6,7 @@ import {
   responseTo1NTOvercall, ntLead, makeProblem, legalBids, parseCard, TYPES,
   openingBidFor, openerAfter1NT, losers, openerAfterRaise, responderSecondBid, openerAfterTransferCont,
   respondTakeout, vs1NT, overOvercall, respond2C, respond2NT, respondPreempt, suitLead,
+  weakTwoReply, afterIntervention, signalCard, doubledScore,
 } from "../bridge-puzzle.js";
 
 let fails = 0, passes = 0;
@@ -127,7 +128,8 @@ eq("QJ107432 → 3H", op("5 QJ107432 Q4 852"), "3H");
 eq("A976432 rejected (chart: 2♦ only if...)", op("5 52 A976432 852"), undefined);
 eq("KQJ97432 eight → 4C", op("52 52 2 KQJ97432"), "4C");
 eq("2H-? 74 J104 KJ96 A742 → 3H", respondPreempt(H("74 J104 KJ96 A742"), 2, 2)?.answer, "3H");
-eq("2H-? A4 J4 AK63 A7432 → 4H", respondPreempt(H("A4 J4 AK63 A7432"), 2, 2)?.answer, "4H");
+eq("2H-? A4 J4 AK63 A7432 (16) → 2NT ask (p9)", respondPreempt(H("A4 J4 AK63 A7432"), 2, 2)?.answer, "2N");
+eq("... and card 22's 4H also accepted", respondPreempt(H("A4 J4 AK63 A7432"), 2, 2)?.answers, ["2N", "4H"]);
 eq("3H-? 73 J74 A9632 Q42 → 4H", respondPreempt(H("73 J74 A9632 Q42"), 2, 3)?.answer, "4H");
 eq("3H-? KQ74 93 KQJ2 QJ9 → pass", respondPreempt(H("KQ74 93 KQJ2 QJ9"), 2, 3)?.answer, "P");
 // Conventions p1: LTC
@@ -173,6 +175,32 @@ eq("lead v suit, KQ → K", suitLead(H("9873 52 KQ64 J52"), Hh)?.r, 13);
 eq("NT lead KJ74 → 4", ntLead([13, 11, 7, 4])?.r, 4);
 eq("NT lead AQ963 → 6", ntLead([14, 12, 9, 6, 3])?.r, 6);
 
+
+// ---- Third batch ------------------------------------------------------------
+// Conventions p9: weak twos
+eq("AQ10653 diamonds → 2D", op("52 Q4 AQ10653 852"), "2D");
+eq("K109432 hearts → 2H", op("52 K109432 Q4 852"), "2H");
+eq("A85432 spades → not a weak two", op("A85432 Q4 852 52"), "P");
+eq("p9 example: 2H-2NT, 53 AJ10432 K43 64 → 3D", weakTwoReply(H("53 AJ10432 K43 64"), Hh)?.answer, "3D");
+eq("p9 minimum: 8+... Q-high suit → 3H", weakTwoReply(H("53 QJ9432 Q43 64"), Hh)?.answer, "3H");
+eq("p9 maximum with four spades → 3S", weakTwoReply(H("K653 AJ10432 4 64"), Hh)?.answer, "3S");
+eq("p9 maximum with AK → 3NT", weakTwoReply(H("53 AK9432 J43 64"), Hh)?.answer, "3N");
+eq("20 unbalanced, five-card suit → 1H (three weak twos)", op("A4 AKQJ8 AK32 75"), "1H");
+eq("21 balanced 5332 → 2NT", op("A4 AKQJ8 AK3 753"), "2N");
+// Conventions p20: the exercise 1D (P) 1S (2H)
+eq("p20 A: planning 2D → pass", afterIntervention(H("42 Q42 AQJ742 A3"), D, S, Hh)?.answer, "P");
+eq("p20 B: planning 1NT → pass", afterIntervention(H("Q2 Q42 AQ42 AJ73"), D, S, Hh)?.answer, "P");
+eq("p20 C: planning 3D → 3D", afterIntervention(H("2 Q42 AKJ742 AQ3"), D, S, Hh)?.answer, "3D");
+eq("p20 D: planning 2NT → 2NT", afterIntervention(H("J92 AQ4 QJ72 AK10"), D, S, Hh)?.answer, "2N");
+// Card 26: signalling example (dummy 753, ♥A led, spades trumps)
+eq("Q82 → 8 (encourage)", signalCard([12, 8, 2], true)?.r, 8);
+eq("1062 → 2 (discourage)", signalCard([10, 6, 2], true)?.r, 2);
+eq("94 with trumps → 9", signalCard([9, 4], true)?.r, 9);
+// Card 13: scoring doubled contracts
+eq("3 down doubled NV = 500", doubledScore("down", 3, false), 500);
+eq("4 down doubled vul = 1100", doubledScore("down", 4, true), 1100);
+eq("2 overtricks doubled vul = 400", doubledScore("over", 2, true), 400);
+
 // ---- Part 2: bulk generation ------------------------------------------------
 const N = Number(process.env.N || 20000);
 const t0 = Date.now();
@@ -185,10 +213,12 @@ for (let seed = 1; seed <= N; seed++) {
   if (all && (all.length !== 13 || new Set(all).size !== 13)) { fails++; console.log("FAIL bad hand", seed); }
   if (p.kind === "bid") {
     const legal = legalBids(p.calls);
-    if (!legal.includes(p.answer)) { fails++; console.log("FAIL illegal answer", seed, p.calls, p.answer); }
+    if (!p.answers.every((a) => legal.includes(a))) { fails++; console.log("FAIL illegal answer", seed, p.calls, p.answers); }
     answers[p.type + " " + p.answer] = (answers[p.type + " " + p.answer] || 0) + 1;
     const again = makeProblem(seed);
     if (again.answer !== p.answer || again.you !== p.you) { fails++; console.log("FAIL not reproducible", seed); }
+  } else if (p.kind === "choice") {
+    if (!p.answers.every((a) => p.options.includes(a)) || new Set(p.options).size !== p.options.length) { fails++; console.log("FAIL choice", seed); }
   } else if (p.kind === "suit") {
     for (const a of p.answers) {
       const [who, r] = a.split(":");
@@ -209,7 +239,7 @@ for (let seed = 1; seed <= N; seed++) {
       const seats = p.trick.map((t) => t.seat);
       const ok = seats.every((st, i) => (st + seats.length - i) % 4 === p.you);
       if (!ok) { fails++; console.log("FAIL trick order", seed, seats, p.you); }
-      const roleOk = { third: [(p.declarer + 1) % 4, p.dummySeat], second: [p.declarer], cover: [p.dummySeat], fourth: [p.dummySeat, (p.declarer + 3) % 4, p.declarer] }[p.type];
+      const roleOk = { third: [(p.declarer + 1) % 4, p.dummySeat], second: [p.declarer], cover: [p.dummySeat], fourth: [p.dummySeat, (p.declarer + 3) % 4, p.declarer], signal: [(p.declarer + 1) % 4, p.dummySeat] }[p.type];
       if (JSON.stringify(roleOk) !== JSON.stringify(seats)) { fails++; console.log("FAIL trick roles", seed, p.type); }
       if (p.dummySeat !== (p.declarer + 2) % 4) { fails++; console.log("FAIL dummy seat", seed); }
       const led = parseCard(p.trick[0].card);

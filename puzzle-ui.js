@@ -9,7 +9,7 @@
 
 import {
   makeProblem, legalBids, bidText, parseCard, cardId, rankStr, SYM, SEAT_NAME,
-} from "./bridge-puzzle.js?v=20261121e";
+} from "./bridge-puzzle.js?v=20261121f";
 
 const STORE = "bridgePuzzleStreak";
 const RED = new Set([1, 2]); // diamonds, hearts
@@ -164,6 +164,7 @@ function biddingBox(p, onPick) {
 
 function answerText(p, a) {
   if (p.kind === "bid") return bidText(a);
+  if (p.kind === "choice") return `${a} points`;
   if (p.kind === "suit") {
     const [who, r] = a.split(":");
     return `${SYM[p.suit]}${rankStr(Number(r))} from ${who === "Y" ? "your hand" : "dummy"}`;
@@ -194,7 +195,17 @@ export function initPuzzle(host, meta) {
 
     let answered = false;
     const pickCard = (id) => answer(id);
-    if (p.kind === "suit") {
+    if (p.kind === "choice") {
+      const opts = h("div", "pz-options");
+      p.options.forEach((o) => {
+        const b = h("button", "pz-opt", `${o} points`);
+        b.type = "button";
+        b.dataset.opt = o;
+        b.addEventListener("click", () => answer(o));
+        opts.appendChild(b);
+      });
+      host.appendChild(opts);
+    } else if (p.kind === "suit") {
       host.appendChild(suitBlock(p, pickCard));
     } else {
       const hands = h("div", "pz-hands");
@@ -219,7 +230,7 @@ export function initPuzzle(host, meta) {
     }
 
     if (p.kind === "bid") host.appendChild(biddingBox(p, (c) => answer(c)));
-    else host.appendChild(h("p", "pz-hint muted", p.kind === "suit" ? "Tap the card you'd play first, from either hand." : p.follow !== undefined ? "Tap a card in your hand (you must follow suit)." : "Tap a card in your hand."));
+    else if (p.kind !== "choice") host.appendChild(h("p", "pz-hint muted", p.kind === "suit" ? "Tap the card you'd play first, from either hand." : p.follow !== undefined ? "Tap a card in your hand (you must follow suit)." : "Tap a card in your hand."));
 
     const fb = h("div", "pz-feedback");
     fb.setAttribute("aria-live", "polite");
@@ -234,8 +245,8 @@ export function initPuzzle(host, meta) {
       if (right) { st.right += 1; st.run += 1; st.best = Math.max(st.best, st.run); } else st.run = 0;
       saveStreak(st);
 
-      host.querySelectorAll("button.pz-bid, button.pz-card").forEach((b) => {
-        const v = b.dataset.call || b.dataset.card;
+      host.querySelectorAll("button.pz-bid, button.pz-card, button.pz-opt").forEach((b) => {
+        const v = b.dataset.call || b.dataset.card || b.dataset.opt;
         if (v === choice) b.classList.add(right ? "pz-right" : "pz-wrong");
         if (v === p.best) b.classList.add("pz-right");
         b.disabled = true;
