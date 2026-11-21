@@ -8,13 +8,14 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <meta name="theme-color" content="#0E2338" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#F3EFE6" media="(prefers-color-scheme: light)" />
-  <script src="theme.js?v=20261121c"></script>
+  <script src="theme.js?v=20261121d"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="tokens.css?v=20261121c" />
-  <link rel="stylesheet" href="hub.css?v=20261121c" />
-  <link rel="stylesheet" href="switch.css?v=20261121c" />
+  <link rel="stylesheet" href="tokens.css?v=20261121d" />
+  <link rel="stylesheet" href="hub.css?v=20261121d" />
+  <link rel="stylesheet" href="switch.css?v=20261121d" />
+  <link rel="stylesheet" href="puzzle.css?v=20261121d" />
 </head>
 <body>
   <nav class="page-switch-wrap" aria-label="Switch page">
@@ -46,10 +47,11 @@
       <div id="tube" class="tube"><p class="muted">Loading…</p></div>
     </section>
 
-    <section class="win" aria-labelledby="h-bw">
-      <div class="win-head"><h2 id="h-bw">♣ Bridge world</h2></div>
-      <div class="deal" id="deal" aria-label="Hand of the day"></div>
-      <ul class="news news-small" id="news-bridge"><li class="muted">Loading…</li></ul>
+    <!-- Bridge problems, generated on the page by bridge-puzzle.js (bidding per
+         Andrew Robson's flip chart) and drawn by puzzle-ui.js. -->
+    <section class="win win-puzzle" aria-labelledby="h-bw">
+      <div class="win-head"><h2 id="h-bw">♣ Bridge problem</h2><span class="win-links" id="puzzle-meta"></span></div>
+      <div id="puzzle" class="puzzle"><p class="muted">Dealing…</p></div>
     </section>
 
     <section class="win" aria-labelledby="h-art">
@@ -88,6 +90,10 @@
     </section>
   </main>
 
-  <script src="hub.js?v=20261121c"></script>
+  <script src="hub.js?v=20261121d"></script>
+  <script type="module">
+    import { initPuzzle } from "./puzzle-ui.js?v=20261121d";
+    initPuzzle(document.getElementById("puzzle"), document.getElementById("puzzle-meta"));
+  </script>
 </body>
 </html>
