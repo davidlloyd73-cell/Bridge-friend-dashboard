@@ -4,11 +4,11 @@
 // always match the main dashboard's round-total column exactly.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261121a";
+import { CONFIG } from "./config.js?v=20261121b";
 import {
   PLAYERS, COLORS, fmtNum, fmtDate, fmtClock, escapeHtml, fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261121a";
+} from "./data.js?v=20261121b";
 
 // Both the target and the round's name come from CONFIG.ROUND — see config.js.
 const TARGET = CONFIG.ROUND.TARGET;
@@ -20,11 +20,6 @@ let lastGoodModel = null;
 let consecutiveErrors = 0;
 let backoffUntil = 0;
 
-// Set this to a player name (e.g. "David") while testing to force their total
-// past 50,000 and exercise the photo-finish banner. MUST be null before
-// shipping — leaving it set would fake a result on the live page.
-const TEST_FORCE_WINNER = null;
-
 const $ = (sel) => document.querySelector(sel);
 
 // =============================================================================
@@ -32,23 +27,21 @@ const $ = (sel) => document.querySelector(sel);
 // =============================================================================
 
 function buildRace(m) {
+  // Once someone has crossed, the race is frozen at that hand: totals are the
+  // ones at the line, and hands played afterwards don't move anyone. The
+  // finish itself is worked out once in data.js (first to cross wins).
+  const f = m.finish;
   const totals = {};
-  PLAYERS.forEach((p) => { totals[p] = m.roundTotal[p]; });
+  PLAYERS.forEach((p) => { totals[p] = f ? f.totalsAtLine[p] : m.roundTotal[p]; });
 
-  if (TEST_FORCE_WINNER && PLAYERS.includes(TEST_FORCE_WINNER)) {
-    totals[TEST_FORCE_WINNER] = TARGET + 250; // test-only override, see const above
-  }
-
-  const ranked = [...PLAYERS].sort((a, b) => totals[b] - totals[a]);
-  const winners = ranked.filter((p) => totals[p] >= TARGET);
-  const raceOver = winners.length > 0;
-  // If more than one crossed in the same refresh, higher total wins.
-  winners.sort((a, b) => totals[b] - totals[a]);
+  const ranked = f ? [...f.ranked] : [...PLAYERS].sort((a, b) => totals[b] - totals[a]);
+  const raceOver = !!f;
+  const winners = f ? f.winners : [];
   const winner = raceOver ? winners[0] : null;
   const leader = ranked[0];
   const leaderTotal = totals[leader];
 
-  return { totals, ranked, raceOver, winner, winners, leader, leaderTotal, pace: m.pace };
+  return { totals, ranked, raceOver, winner, winners, leader, leaderTotal, pace: m.pace, finish: f };
 }
 
 // =============================================================================
@@ -62,8 +55,16 @@ function statusLine(player, race) {
 
   if (raceOver) {
     const place = race.ranked.indexOf(player) + 1;
-    if (player === winner) return `🏁 Champion! ${fmtNum(total)} points.`;
-    if (place === 2) return `🥈 2nd place — ${fmtNum(toGo)} short at the line.`;
+    if (race.winners.includes(player)) {
+      return race.winners.length > 1
+        ? `🏁 Joint champion! ${fmtNum(total)} points.`
+        : `🏁 Champion! ${fmtNum(total)} points.`;
+    }
+    if (place === race.winners.length + 1) {
+      return toGo > 0
+        ? `🥈 2nd place — ${fmtNum(toGo)} short at the line.`
+        : `🥈 2nd place — over the line on the same hand, just behind.`;
+    }
     if (place === race.ranked.length) return `🥄 Wooden spoon — better luck next round.`;
     return `${ordinal(place)} place — ${fmtNum(total)} points.`;
   }
@@ -88,20 +89,20 @@ function renderBanner(race) {
   const el = $("#photo-finish");
   if (!race.raceOver) { el.hidden = true; el.innerHTML = ""; return; }
 
-  const second = race.ranked[1];
+  const f = race.finish;
+  const second = race.ranked.find((p) => !race.winners.includes(p));
   const margin = race.totals[race.winner] - race.totals[second];
   const color = COLORS[race.winner];
-
-  const extra = race.winners.length > 1
-    ? `<div class="pf-extra">Both ${race.winners.map((w) => escapeHtml(w)).join(" and ")} crossed the line — ${escapeHtml(race.winner)} had the higher total.</div>`
-    : "";
+  const names = race.winners.map((w) => escapeHtml(w)).join(" and ");
+  const shared = race.winners.length > 1;
+  const where = `on hand ${escapeHtml(f.handNo)}, ${escapeHtml(f.sessionLabel)}`;
 
   el.hidden = false;
   el.style.setProperty("--pf-color", color);
   el.innerHTML = `
-    <div class="pf-main">🏁 ${escapeHtml(race.winner)} is home! Round over.</div>
-    <div class="pf-sub">Final: <b>${fmtNum(race.totals[race.winner])}</b> · won by <b>${fmtNum(margin)}</b> over ${escapeHtml(second)}</div>
-    ${extra}`;
+    <div class="pf-main">🏁 ${names} ${shared ? "share the win" : "is home"}! ${escapeHtml(ROUND.LABEL)} is over.</div>
+    <div class="pf-sub">Crossed ${fmtNum(TARGET)} first, ${where} · <b>${fmtNum(race.totals[race.winner])}</b> · ${fmtNum(margin)} clear of ${escapeHtml(second)}</div>
+    <div class="pf-extra">First to cross wins. This page is frozen at that hand, so later hands can't change the result.</div>`;
 }
 
 /** Faint marks on the track at each 10,000, so progress reads against something. */
@@ -226,7 +227,7 @@ function logVerification(m, race) {
   /* eslint-disable no-console */
   verifyRound(m);
   console.log("Leader:", race.leader, fmtNum(race.leaderTotal), `· target ${fmtNum(TARGET)}`);
-  if (race.raceOver) console.log("Winner:", race.winner);
+  if (race.raceOver) console.log("Winner:", race.winners.join(" & "), "· hand", race.finish.handNo, race.finish.sessionLabel);
   /* eslint-enable no-console */
 }
 let verificationLogged = false;

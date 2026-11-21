@@ -118,6 +118,26 @@ Open that URL — the dashboard is live. 🎉
 | `race.html` / `race.js` / `race.css` | The live "Race to 50,000" page. |
 | `README.md`  | This file. |
 
+### 🏆 Who wins the round
+
+**First to cross wins.** The winner is whoever reaches `ROUND.TARGET` first,
+on the exact hand it happens. Hands played later that night (or after) can't
+take it away, even if someone else ends up higher.
+
+- Hands are taken in the order they were played: by night, then by when the
+  hand was first logged on the form (a mistyped hand number can't reorder
+  them), then by hand number.
+- All four entries for a hand count together, so partners who cross on the
+  same hand aren't split by who filled in the form first. Then the higher
+  total wins, and an exact tie is a shared win.
+- This is worked out once, in `data.js` (`findFinish`, returned as
+  `model.finish`). The race page, the dashboard headline, the 50,000
+  milestone, the celebration toast and the WhatsApp recap all read that one
+  result, so they can't disagree. Once someone is home, the race page freezes
+  at that hand.
+- Hands logged after the finish still add to the Round tab totals until a new
+  round is started (below).
+
 ### 🏁 Starting a new round
 
 The race is **not** tied to a calendar year. Everything round-scoped — the round

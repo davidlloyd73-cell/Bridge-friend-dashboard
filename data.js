@@ -381,6 +381,55 @@ function compareHands(a, b) {
   return a.firstTsMs - b.firstTsMs;
 }
 
+/**
+ * Who reached the round's target first. House rule: first to cross wins, on
+ * the exact hand it happens; hands played afterwards can't take it away.
+ *
+ * Walks the round's hands in playing order: by session, then by when the hand
+ * was first logged (a typed hand number can be wrong, the form's clock can't),
+ * then by hand number. All four entries for a hand go in together, so partners
+ * who both cross on one hand aren't split by who filled in the form first.
+ * When several players cross on the same hand, the higher total wins; an exact
+ * tie is shared. Returns null while nobody has reached the target.
+ */
+function findFinish(records) {
+  const hands = new Map();
+  records.forEach((rec) => {
+    if (!rec.inRound || !PLAYERS.includes(rec.player)) return;
+    const key = `${rec.sessionKey}|${rec.hand}`;
+    if (!hands.has(key)) {
+      hands.set(key, {
+        sessionMs: rec.sessionDate ? rec.sessionDate.getTime() : 0,
+        sessionLabel: fmtDate(rec.sessionDate), handNo: rec.hand,
+        firstTsMs: Infinity, rows: [],
+      });
+    }
+    const h = hands.get(key);
+    if (rec.tsMs) h.firstTsMs = Math.min(h.firstTsMs, rec.tsMs);
+    h.rows.push(rec);
+  });
+  const ordered = [...hands.values()].sort((a, b) =>
+    a.sessionMs - b.sessionMs || a.firstTsMs - b.firstTsMs || compareHands(a, b));
+
+  const running = {};
+  PLAYERS.forEach((p) => (running[p] = 0));
+  for (const h of ordered) {
+    h.rows.forEach((r) => { running[r.player] += r.score; });
+    const home = PLAYERS.filter((p) => running[p] >= ROUND.TARGET);
+    if (!home.length) continue;
+    const best = Math.max(...home.map((p) => running[p]));
+    return {
+      winners: home.filter((p) => running[p] === best),
+      handNo: h.handNo,
+      sessionLabel: h.sessionLabel,
+      tsMs: Number.isFinite(h.firstTsMs) ? h.firstTsMs : 0,
+      totalsAtLine: { ...running },
+      ranked: [...PLAYERS].sort((a, b) => running[b] - running[a]),
+    };
+  }
+  return null;
+}
+
 export function buildModel(rows) {
   // Drop the header row; ignore fully-empty rows.
   const dataRows = rows.slice(1).filter((r) => r && r.length && String(r[COL.PLAYER] ?? "").trim() !== "");
@@ -564,6 +613,13 @@ export function buildModel(rows) {
     reached.sort((a, b) => per[a].idx - per[b].idx || per[b].total - per[a].total);
     milestones.push({ value, per, first: reached[0] || null });
   });
+
+  const finish = findFinish(records);
+  // The finish line is decided hand by hand, not session by session: two
+  // players can both pass the target on the same night, and the one who got
+  // there first wins even if the other ends the night higher.
+  const finalMark = milestones[milestones.length - 1];
+  if (finish && finalMark && finalMark.value === ROUND.TARGET) finalMark.first = finish.winners[0];
 
   // ---- Latest hand (newest timestamp) ----
   let latestRec = null;
@@ -1073,7 +1129,7 @@ export function buildModel(rows) {
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
     efficiencySession, declarerAll, declarerSession, declarerMadeAll, declarerMadeSession,
-    night, partnerships, recordBook: records_, pace, milestones, contracts, luck, luckBands, quirks,
+    night, partnerships, recordBook: records_, pace, milestones, finish, contracts, luck, luckBands, quirks,
     handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,

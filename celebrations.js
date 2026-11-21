@@ -7,7 +7,7 @@
 // doesn't replay old news.
 // =============================================================================
 
-import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261121a";
+import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261121b";
 
 const SUITS = { clubs: "♣", diamonds: "♦", hearts: "♥", spades: "♠", "no trumps": "NT", notrumps: "NT", nt: "NT" };
 
@@ -23,12 +23,13 @@ export function celebrate(prev, next) {
   if (!prev || !next || next.rowCount <= prev.rowCount) return [];
   const out = [];
 
-  // Round finished: nothing else matters as much.
-  PLAYERS.forEach((p) => {
-    if (prev.roundTotal[p] < ROUND.TARGET && next.roundTotal[p] >= ROUND.TARGET) {
-      out.push(`🏆 ${p} is home! ${ROUND.LABEL} is over — ${fmtNum(next.roundTotal[p])}.`);
-    }
-  });
+  // Round finished: nothing else matters as much. Judged by the shared finish
+  // in data.js (first to cross wins), so this can't name someone the race
+  // page doesn't.
+  if (!prev.finish && next.finish) {
+    const f = next.finish, names = f.winners.join(" & ");
+    out.push(`🏆 ${names} ${f.winners.length > 1 ? "are" : "is"} home first! ${ROUND.LABEL} is over — ${fmtNum(f.totalsAtLine[f.winners[0]])}.`);
+  }
 
   // A slam brought home on the newest hand.
   const h = next.latestHand, ph = prev.latestHand;
