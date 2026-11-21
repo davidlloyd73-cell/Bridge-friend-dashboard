@@ -17,7 +17,7 @@
 // few minutes) is left alone until it's finished.
 // =============================================================================
 
-import { PLAYERS, fmtClock } from "./data.js?v=20261121i";
+import { PLAYERS, fmtClock } from "./data.js?v=20261121j";
 
 const SHOW_FOR_MS = 18 * 3600 * 1000;   // the check shows until 18 hours after the last hand
 const IN_PROGRESS_MS = 4 * 60 * 1000;   // a hand logged in the last 4 minutes may still be arriving
