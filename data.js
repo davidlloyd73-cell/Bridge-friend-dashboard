@@ -4,7 +4,7 @@
 // race.js (race-to-50000 page) so the two pages never disagree on totals.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261121h";
+import { CONFIG } from "./config.js?v=20261121i";
 
 // ---- Fixed players & their signature colours -------------------------------
 // COLORS holds CSS custom-property references, not hex, so every inline style
