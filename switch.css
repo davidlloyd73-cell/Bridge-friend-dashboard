@@ -1,0 +1,49 @@
+/* switch.css — the big "Bridge | Hub" switch at the top of index.html and
+   hub.html. One control, two halves: the page you're on is lit, tap the other
+   half to go there. Colours come from tokens.css, so it follows light/dark.
+
+   The hub shows the Bridge dashboard inside an iframe; index.html adds the
+   "framed" class to <html> when that happens, so the switch hides there and
+   you never see two of them. */
+
+.page-switch {
+  display: flex;
+  max-width: 520px;
+  margin: 12px auto 0;
+  padding: 4px;
+  gap: 4px;
+  background: var(--navy-700);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+.page-switch a {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;              /* a comfortable thumb target on a phone */
+  padding: 8px 16px;
+  border-radius: 999px;
+  font: 600 1.05rem var(--font-display);
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: background .15s ease, color .15s ease;
+}
+.page-switch a:hover { color: var(--ink); background: var(--navy-800); text-decoration: none; }
+.page-switch a[aria-current="page"] {
+  background: var(--gold);
+  color: var(--navy-900);
+  cursor: default;
+}
+.page-switch a:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+/* Keep it clear of the page edges on a narrow phone. */
+.page-switch-wrap { padding: 0 16px; }
+
+html.framed .page-switch-wrap { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-switch a { transition: none; }
+}

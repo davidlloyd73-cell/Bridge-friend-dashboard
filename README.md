@@ -109,6 +109,7 @@ Open that URL — the dashboard is live. 🎉
 |--------------|------------|
 | `index.html` | Page structure (the Bridge dashboard; `hub.html` is the news hub) + the Chart.js CDN tag. |
 | `styles.css` | Dashboard styling. Imports `tokens.css`; declares no colours of its own. |
+| `switch.css` | The big **♠ Bridge \| 📰 Hub** switch at the top of `index.html` and `hub.html`. The page you're on is lit gold; tap the other half to go there. It hides itself when the dashboard is shown inside the hub's Bridge window, so you never see two. |
 | `tokens.css` | **All design tokens** — the navy/teal/gold palette, player colours, shadow, radius and the three font stacks. Shared by both pages; edit a colour here and both follow. |
 | `app.js`     | Fetches the sheet, parses it defensively, computes all the stats, renders, and runs the 60-second polling loop. |
 | `config.js`  | **The file you edit.** API key, sheet ID, range, refresh interval, form link, the current **round**, and when one **night** of play ends. |
@@ -191,7 +192,9 @@ carry the **same** query on their `./data.js` and `./config.js` imports, and
 change anything, bump that value **everywhere** — each of those is a separate
 fetch, so bumping only the `<script>` tags would leave browsers running a cached
 `data.js` (where most of the logic lives) or a cached `tokens.css` (where every
-colour lives). Twenty places in total; grep for the current value to find them.
+colour lives). The hub (`hub.html`) uses the same value on its own files, and
+both `index.html` and `hub.html` load `switch.css` with it. Twenty-six places in
+total; grep for the current value to find them.
 
 ### Player colours
 David = **blue**, Vivienne = **green**, Hamish = **orange**, Caroline =
