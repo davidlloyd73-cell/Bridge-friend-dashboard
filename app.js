@@ -5,15 +5,16 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { celebrate } from "./celebrations.js?v=20261121f";
-import { buildRecap, nightLines } from "./recap.js?v=20261121f";
-import { initCommentator } from "./commentator.js?v=20261121f";
-import { CONFIG } from "./config.js?v=20261121f";
+import { celebrate } from "./celebrations.js?v=20261121g";
+import { buildRecap, nightLines } from "./recap.js?v=20261121g";
+import { initCommentator } from "./commentator.js?v=20261121g";
+import { nightCheck, newIssueAlerts } from "./nightcheck.js?v=20261121g";
+import { CONFIG } from "./config.js?v=20261121g";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261121f";
+} from "./data.js?v=20261121g";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -1315,7 +1316,28 @@ function renderQuirks(m) {
   }).join("");
 }
 
+/** Tonight's check (nightcheck.js): this session's slips, or hidden if none. */
+let lastNightCheck = null;
+function renderNightCheck(m) {
+  const el = $("#night-check");
+  if (!el) return null;
+  const nc = nightCheck(m);
+  lastNightCheck = nc;
+  if (!nc || !nc.issues.length) { el.hidden = true; return nc; }
+  el.hidden = false;
+  el.classList.toggle("has-serious", nc.serious > 0);
+  const minor = nc.issues.length - nc.serious;
+  $("#night-check-summary").textContent = `${nc.label}: ${[
+    nc.serious ? `${nc.serious} entr${nc.serious === 1 ? "y problem" : "y problems"} that change the scores` : "",
+    minor ? `${minor} contract disagreement${minor === 1 ? "" : "s"}` : "",
+  ].filter(Boolean).join(" and ")}.`;
+  $("#night-check-list").innerHTML = nc.issues.map((i) =>
+    `<li class="nc-${i.severity}"><span class="nc-badge">${i.severity === "serious" ? "Fix" : "Check"}</span> ${escapeHtml(i.text)}</li>`).join("");
+  return nc;
+}
+
 function renderAll(m) {
+  renderNightCheck(m);
   renderHeadline(m);
   renderLatestHand(m);
   renderThisSession(m);
@@ -1402,12 +1424,16 @@ async function refresh({ manual = false } = {}) {
       lastSignature = signature;
       const before = lastGoodModel;   // null on first load: nothing to celebrate yet
       lastGoodModel = model;
+      const ncBefore = lastNightCheck;
       renderAll(model);
-      showToast(celebrate(before, model));
+      showToast([...newIssueAlerts(before ? ncBefore : null, lastNightCheck), ...celebrate(before, model)].slice(0, 4));
       if (!verificationLogged) { logVerification(model); verificationLogged = true; }
     } else {
-      // Data unchanged — just refresh the "updated" stamp.
+      // Data unchanged — just refresh the "updated" stamp. Tonight's check
+      // still re-runs: a hand that was mid-entry a few minutes ago may now
+      // count as finished (or the session may have aged out).
       $("#last-updated").textContent = "Updated " + new Date().toLocaleTimeString("en-GB");
+      if (lastGoodModel) renderNightCheck(lastGoodModel);
     }
   } catch (err) {
     consecutiveErrors += 1;
@@ -1568,4 +1594,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261121f";
+export { buildModel, parseUKDate } from "./data.js?v=20261121g";
