@@ -4,6 +4,7 @@
 import {
   makeHand, sqot, responseToSuit, responseTo1NT, overcall, responseToOvercall,
   responseTo1NTOvercall, ntLead, makeProblem, legalBids, parseCard, TYPES,
+  openingBidFor, openerAfter1NT,
 } from "../bridge-puzzle.js";
 
 let fails = 0, passes = 0;
@@ -83,6 +84,34 @@ eq("lead from QJ1062 → Q", ntLead([12, 11, 10, 6, 2])?.r, 12);
 eq("lead from KQ852 rejected", ntLead([13, 12, 8, 5, 2]), null);
 eq("lead from KJ1052 rejected", ntLead([13, 11, 10, 5, 2]), null);
 
+
+// ---- Cards 1, 2, 7: opening --------------------------------------------------
+const op = (hand) => openingBidFor(H(hand))?.answer;
+eq("16 bal 4♠4♥ → 1H", op("AQ52 KJ63 K4 Q52"), "1H");
+eq("16 bal 4♠4♦ → 1S", op("AQ52 K63 KJ63 Q5"), "1S");
+eq("13 bal 5♠332 → 1NT", op("AQ852 K63 J4 Q52"), "1N");
+eq("12 bal 4432 → 1NT", op("A852 K63 K4 Q852"), "1N");
+eq("25 unbalanced with ♣ → 2C", op("A4 A5 AK3 AKQJ85"), "2C");
+eq("18 bal → 1 longest (♦)", op("AQ5 KJ6 AJ963 Q5"), "1D");
+eq("21 bal → 2NT", op("AQ5 KJ6 AJ93 KQ5"), "2N");
+eq("24 bal → 2C", op("AKQ5 KJ6 AJ9 KQ5"), "2C");
+eq("Rule of 20 = 19 → pass (9+6+4)", op("K98632 A754 Q4 5"), "P");
+eq("Rule of 20 = 20 → 1S (10+6+4)", op("K98632 A754 K4 5"), "1S");
+eq("Rule of 20 5-5 → higher ranking 1H", op("4 AJ852 32 KQ963"), "1H");
+eq("21 unbalanced ♥ → 2H", op("A4 AKQJ85 AK3 75"), "2H");
+eq("21 unbalanced ♣ longest rejected", op("84 A5 AK3 AKQJ85"), undefined);
+eq("24 unbalanced → 2C", op("A4 AKQJ85 AKQ 75"), "2C");
+eq("7-card suit rejected (pre-empt)", op("KQJ9852 5 Q4 852"), undefined);
+
+// ---- Card 5: opener after 1NT ----------------------------------------------
+const nt = (hand, resp) => openerAfter1NT(H(hand), resp)?.answer;
+eq("1NT-2NT with 12 → pass", nt("A852 K63 K4 Q852", "2N"), "P");
+eq("1NT-2NT with 14 → 3NT", nt("A852 K63 Q4 KQ85", "2N"), "3N");
+eq("1NT-2NT with 13 rejected", nt("A852 K63 Q4 KJ85", "2N"), undefined);
+eq("1NT-3S with doubleton → 3NT", nt("A8 K632 Q42 KJ85", "3S"), "3N");
+eq("1NT-3S with three → 4S", nt("A82 K63 Q42 KJ85", "3S"), "4S");
+eq("1NT-2H weak → pass", nt("A82 K63 Q42 KJ85", "2H"), "P");
+
 // ---- Part 2: bulk generation ------------------------------------------------
 const N = Number(process.env.N || 20000);
 const t0 = Date.now();
@@ -105,6 +134,19 @@ for (let seed = 1; seed <= N; seed++) {
       if (!p.hand.suits[c.s].includes(c.r)) { fails++; console.log("FAIL answer not in hand", seed, a); }
     }
     if (!p.answers.includes(p.best)) { fails++; console.log("FAIL best not an answer", seed); }
+    // Seats: the opening leader sits on declarer's left; cards already played
+    // to the trick come from the seats just before yours, clockwise.
+    if (p.type === "leadnt" && p.you !== (p.declarer + 1) % 4) { fails++; console.log("FAIL leader seat", seed); }
+    if (p.trick) {
+      const seats = p.trick.map((t) => t.seat);
+      const ok = seats.every((st, i) => (st + seats.length - i) % 4 === p.you);
+      if (!ok) { fails++; console.log("FAIL trick order", seed, seats, p.you); }
+      const roleOk = { third: [(p.declarer + 1) % 4, p.dummySeat], second: [p.declarer], cover: [p.dummySeat] }[p.type];
+      if (JSON.stringify(roleOk) !== JSON.stringify(seats)) { fails++; console.log("FAIL trick roles", seed, p.type); }
+      if (p.dummySeat !== (p.declarer + 2) % 4) { fails++; console.log("FAIL dummy seat", seed); }
+      const led = parseCard(p.trick[0].card);
+      if (p.follow !== led.s) { fails++; console.log("FAIL follow suit", seed); }
+    }
   }
   if (!p.why || !p.card) { fails++; console.log("FAIL missing explanation", seed); }
 }

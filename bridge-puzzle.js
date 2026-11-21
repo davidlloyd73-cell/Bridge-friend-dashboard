@@ -161,7 +161,7 @@ function seating(rand, calls) {
 // =============================================================================
 
 /** Cards 1, 2, 7 — what do you open? First or second seat only. */
-function openingBidFor(h) {
+export function openingBidFor(h) {
   if (Math.max(...h.len) >= 7 || h.hcp > 25) return null; // pre-empts / huge hands: not on the chart
   const s = openerSuit(h), name = SUIT_NAME[s];
   if (h.bal) {
@@ -255,12 +255,8 @@ function genRespondSuit(rand) {
   return { calls, hand: h, ...r, tag: "Responding to partner" };
 }
 
-/** Card 5 — you opened 1NT; partner has responded. */
-function genOpenerAfter1NT(rand) {
-  const deck = shuffledDeck(rand), h = makeHand(deck.slice(0, 13));
-  if (!h.bal || h.hcp < 12 || h.hcp > 14) return null;
-  const roll = rand();
-  const resp = roll < 0.35 ? "2N" : roll < 0.75 ? pick(rand, ["3H", "3S"]) : roll < 0.9 ? pick(rand, ["2D", "2H", "2S"]) : pick(rand, ["3N", "4H", "4S"]);
+/** Card 5 — your follow-up after opening 1NT, given partner's response. */
+export function openerAfter1NT(h, resp) {
   let answer, why;
   if (resp === "2N") {
     if (h.hcp === 13) return null; // "a good 13" is judgement
@@ -281,6 +277,18 @@ function genOpenerAfter1NT(rand) {
     answer = "P";
     why = `Partner's ${bidText(resp)} is a sign-off in game. Partner is in charge: pass.`;
   }
+  return { answer, why };
+}
+
+/** Card 5 — you opened 1NT; partner has responded. */
+function genOpenerAfter1NT(rand) {
+  const deck = shuffledDeck(rand), h = makeHand(deck.slice(0, 13));
+  if (!h.bal || h.hcp < 12 || h.hcp > 14) return null;
+  const roll = rand();
+  const resp = roll < 0.35 ? "2N" : roll < 0.75 ? pick(rand, ["3H", "3S"]) : roll < 0.9 ? pick(rand, ["2D", "2H", "2S"]) : pick(rand, ["3N", "4H", "4S"]);
+  const r = openerAfter1NT(h, resp);
+  if (!r) return null;
+  const { answer, why } = r;
   const calls = rand() < 0.5 ? ["1N", "P", resp, "P"] : ["P", "1N", "P", resp, "P"];
   return { calls, hand: h, answer, why: `${why} (You opened 1NT with ${h.hcp}.)`, card: "Card 5 · Opening 1NT", tag: "Opener's rebid" };
 }
