@@ -9,7 +9,7 @@
 
 import {
   makeProblem, legalBids, bidText, parseCard, cardId, rankStr, SYM, SEAT_NAME,
-} from "./bridge-puzzle.js?v=20261121d";
+} from "./bridge-puzzle.js?v=20261121e";
 
 const STORE = "bridgePuzzleStreak";
 const RED = new Set([1, 2]); // diamonds, hearts
@@ -28,6 +28,7 @@ function label(text, strain) {
 }
 function callNode(call) {
   if (call === "P") return h("span", "pz-pass", "Pass");
+  if (call === "X") return h("span", "pz-dbl", "Dbl");
   const strain = "CDHSN".indexOf(call[1]);
   return label(bidText(call), strain);
 }
@@ -101,6 +102,30 @@ function handBlock(title, hand, opts = {}) {
   return box;
 }
 
+/** Declarer problems: just the one suit, dummy above you, every card tappable. */
+function suitBlock(p, onPick) {
+  const box = h("div", "pz-suitplay");
+  [["Dummy (North)", p.dummyCards, "D"], ["You (South)", p.youCards, "Y"]].forEach(([title, cards, who]) => {
+    const row = h("div", "pz-hand");
+    row.appendChild(h("div", "pz-hand-title", title));
+    const line = h("div", "pz-suit");
+    line.appendChild(label(SYM[p.suit], p.suit)).classList.add("pz-sym");
+    const wrap = h("span", "pz-cards");
+    cards.forEach((r) => {
+      const b = h("button", "pz-card" + (RED.has(p.suit) ? " pz-red" : ""), rankStr(r));
+      b.type = "button";
+      b.dataset.card = `${who}:${r}`;
+      b.setAttribute("aria-label", `${rankStr(r)} from ${who === "Y" ? "your hand" : "dummy"}`);
+      b.addEventListener("click", () => onPick(`${who}:${r}`));
+      wrap.appendChild(b);
+    });
+    line.appendChild(wrap);
+    row.appendChild(line);
+    box.appendChild(row);
+  });
+  return box;
+}
+
 function biddingBox(p, onPick) {
   const legal = new Set(legalBids(p.calls));
   const box = h("div", "pz-box");
@@ -121,16 +146,28 @@ function biddingBox(p, onPick) {
     }
     if (any) box.appendChild(row);
   }
+  const row = h("div", "pz-box-calls");
   const pass = h("button", "pz-bid pz-bid-pass", "Pass");
   pass.type = "button";
   pass.dataset.call = "P";
   pass.addEventListener("click", () => onPick("P"));
-  box.appendChild(pass);
+  row.appendChild(pass);
+  const dbl = h("button", "pz-bid pz-bid-dbl", "Double");
+  dbl.type = "button";
+  dbl.dataset.call = "X";
+  if (!legal.has("X")) dbl.disabled = true;
+  dbl.addEventListener("click", () => onPick("X"));
+  row.appendChild(dbl);
+  box.appendChild(row);
   return box;
 }
 
 function answerText(p, a) {
   if (p.kind === "bid") return bidText(a);
+  if (p.kind === "suit") {
+    const [who, r] = a.split(":");
+    return `${SYM[p.suit]}${rankStr(Number(r))} from ${who === "Y" ? "your hand" : "dummy"}`;
+  }
   const c = parseCard(a);
   return `${SYM[c.s]}${rankStr(c.r)}`;
 }
@@ -152,16 +189,20 @@ export function initPuzzle(host, meta) {
     const q = h("p", "pz-question", p.kind === "bid" ? "What do you bid?" : p.question);
     host.appendChild(q);
 
-    if (p.contract) host.appendChild(h("p", "pz-contract", `Contract: ${p.contract}. You are ${SEAT_NAME[p.you]}.`));
+    if (p.contract) host.appendChild(h("p", "pz-contract", `Contract: ${p.contract}. You are ${p.kind === "suit" ? "declarer" : SEAT_NAME[p.you]}.`));
     if (p.calls) host.appendChild(auctionTable(p));
 
-    const hands = h("div", "pz-hands");
     let answered = false;
     const pickCard = (id) => answer(id);
-    if (p.dummyHand) hands.appendChild(handBlock(`Dummy (${SEAT_NAME[p.dummySeat]})`, p.dummyHand));
-    hands.appendChild(handBlock(`Your hand (${SEAT_NAME[p.you]})`, p.hand,
-      p.kind === "play" ? { onPick: pickCard, follow: p.follow } : {}));
-    host.appendChild(hands);
+    if (p.kind === "suit") {
+      host.appendChild(suitBlock(p, pickCard));
+    } else {
+      const hands = h("div", "pz-hands");
+      if (p.dummyHand) hands.appendChild(handBlock(`Dummy (${SEAT_NAME[p.dummySeat]})`, p.dummyHand));
+      hands.appendChild(handBlock(`Your hand (${SEAT_NAME[p.you]})`, p.hand,
+        p.kind === "play" ? { onPick: pickCard, follow: p.follow } : {}));
+      host.appendChild(hands);
+    }
 
     if (p.trick) {
       const tr = h("p", "pz-trick");
@@ -178,7 +219,7 @@ export function initPuzzle(host, meta) {
     }
 
     if (p.kind === "bid") host.appendChild(biddingBox(p, (c) => answer(c)));
-    else host.appendChild(h("p", "pz-hint muted", p.follow !== undefined ? "Tap a card in your hand (you must follow suit)." : "Tap a card in your hand."));
+    else host.appendChild(h("p", "pz-hint muted", p.kind === "suit" ? "Tap the card you'd play first, from either hand." : p.follow !== undefined ? "Tap a card in your hand (you must follow suit)." : "Tap a card in your hand."));
 
     const fb = h("div", "pz-feedback");
     fb.setAttribute("aria-live", "polite");
@@ -207,7 +248,7 @@ export function initPuzzle(host, meta) {
         : `✗ Not this time: the answer is ${answerText(p, p.best)}.`;
       fb.appendChild(h("p", "pz-verdict", verdict));
       fb.appendChild(h("p", "pz-why", p.why));
-      fb.appendChild(h("p", "pz-source", p.card + (p.kind === "bid" ? " (Andrew Robson flip chart)" : "")));
+      fb.appendChild(h("p", "pz-source", p.card + (/^(Card \d|Conventions)/.test(p.card) ? " (Andrew Robson flip chart)" : "")));
       const row = h("div", "pz-next-row");
       const next = h("button", "pz-next", "Next problem →");
       next.type = "button";
