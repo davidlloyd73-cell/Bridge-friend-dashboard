@@ -112,6 +112,7 @@ Open that URL — the dashboard is live. 🎉
 | `bridge-puzzle.js` | The hub's **Bridge problem** window: deals a random hand and works out the answer from Andrew Robson's flip chart (cards 1–17, 19–26, plus the Conventions flipper's Losing Trick Count, Stayman, Weak Twos, Transfers and Coping with Intervention pages). House agreements: Acol 12–14 1NT, **Three Weak Twos** (so 20–22 unbalanced opens one of a suit; card 18's strong twos aren't used), **transfers** over 1NT/2NT, card 3's points line for raises, LTC for opener after a raise. Bidding, defence (leads, 2nd/3rd/4th hand, covering) and declarer "which card first?" problems. Hands the chart doesn't clearly settle are thrown away and re-dealt. Also signalling (card 26) and a doubled-scoring quiz (card 13). Pure logic, no page code. |
 | `puzzle-ui.js` / `puzzle.css` | Draws that window: auction grid (N E S W, dealer and "You" marked), your hand by suit, a bidding box with only legal bids or clickable cards, then right/wrong with the reason and **Next problem**. `hub.html?p=<number>` reopens a problem by its number. |
 | `scripts/test_puzzle.mjs` | Tests for the problems: the flip chart's own examples plus 20,000 generated problems. Run `node scripts/test_puzzle.mjs` after changing a rule. |
+| `nightcheck.js` | **Tonight's check** at the top of the Tonight tab: slips in the current session's entries, so they can be fixed while everyone's still at the table. "Fix" (changes the scores): a missing or doubled entry, a mistyped hand number (with a suggested correction, e.g. 696 → 896), or points that don't pair up (partners score the same; only one side scores). "Check": partners disagree on the contract or tricks. Hands still being entered (last entry under 4 minutes ago) are left alone; the panel disappears 18 hours after the session. A new "Fix" pops up a notice too. |
 | `switch.css` | The big **♠ Bridge \| 📰 Hub** switch at the top of `index.html` and `hub.html`. The page you're on is lit gold; tap the other half to go there. It hides itself when the dashboard is shown inside the hub's Bridge window, so you never see two. |
 | `tokens.css` | **All design tokens** — the navy/teal/gold palette, player colours, shadow, radius and the three font stacks. Shared by both pages; edit a colour here and both follow. |
 | `app.js`     | Fetches the sheet, parses it defensively, computes all the stats, renders, and runs the 60-second polling loop. |
@@ -232,7 +233,7 @@ change anything, bump that value **everywhere** — each of those is a separate
 fetch, so bumping only the `<script>` tags would leave browsers running a cached
 `data.js` (where most of the logic lives) or a cached `tokens.css` (where every
 colour lives). The hub (`hub.html`) uses the same value on its own files, and
-both `index.html` and `hub.html` load `switch.css` with it. Twenty-nine places in
+both `index.html` and `hub.html` load `switch.css` with it. Thirty-two places in
 total, counting `hub.html`'s `puzzle.css` and `puzzle-ui.js` and that file's
 import of `bridge-puzzle.js`; grep for the current value to find them.
 

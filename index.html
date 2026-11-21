@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="Bridge" />
   <meta name="theme-color" content="#0E2338" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#F3EFE6" media="(prefers-color-scheme: light)" />
-  <script src="theme.js?v=20261121f"></script>
+  <script src="theme.js?v=20261121g"></script>
   <!-- Inside the hub's window the page switch would be a second copy of the
        hub's own, so hide it there (see switch.css). -->
   <script>if (window.self !== window.top) document.documentElement.classList.add("framed");</script>
@@ -21,8 +21,8 @@
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20261121f" />
-  <link rel="stylesheet" href="switch.css?v=20261121f" />
+  <link rel="stylesheet" href="styles.css?v=20261121g" />
+  <link rel="stylesheet" href="switch.css?v=20261121g" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -63,6 +63,14 @@
     </nav>
 
     <div class="tab-pane" id="tab-tonight" role="tabpanel" aria-labelledby="tabbtn-tonight">
+    <!-- TONIGHT'S CHECK: slips in this session's entries, shown only when there
+         are some (nightcheck.js). Fix them in the Google Sheet. -->
+    <section class="panel night-check" id="night-check" aria-labelledby="night-check-title" aria-live="polite" hidden>
+      <h2 id="night-check-title">Tonight's check</h2>
+      <p class="muted small" id="night-check-summary"></p>
+      <ul class="night-check-list" id="night-check-list"></ul>
+      <p class="muted small">Fix these in the Google Sheet ("Form responses 1"); this list updates by itself.</p>
+    </section>
     <!-- LATEST HAND -->
     <section class="panel latest-hand" aria-labelledby="latest-hand-title">
       <h2 id="latest-hand-title">Latest hand</h2>
@@ -403,7 +411,7 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script src="tabs.js?v=20261121f" defer></script>
-  <script type="module" src="app.js?v=20261121f"></script>
+  <script src="tabs.js?v=20261121g" defer></script>
+  <script type="module" src="app.js?v=20261121g"></script>
 </body>
 </html>
