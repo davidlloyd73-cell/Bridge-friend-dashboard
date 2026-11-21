@@ -70,11 +70,19 @@ export const CONFIG = {
   //              dated on or after this day count, everything earlier does not.
   //   • TARGET — points needed to win the round.
   // The all-time totals and the all-time chart are unaffected by this block.
+  //
+  // THE NEXT ROUND STARTS BY ITSELF. House rules: the first player to reach
+  // TARGET wins, the round runs to the end of that night, and the next round
+  // ("Round 3", same TARGET) starts with the next night that has hands. So you
+  // don't need to edit this block between rounds. It only says where the
+  // counting starts; later rounds follow from the scores. Set AUTO_NEXT to
+  // false to stop that and change rounds by hand here instead.
   // ---------------------------------------------------------------------------
   ROUND: {
     LABEL: "Round 2",
     START: "10/07/2026",
     TARGET: 50000,
+    AUTO_NEXT: true,
   },
 
   // ---------------------------------------------------------------------------

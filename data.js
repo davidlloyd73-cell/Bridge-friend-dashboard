@@ -124,12 +124,33 @@ export function parseUKDate(v) {
 // Parsed once here so the record-level and session-level filters can never
 // drift apart. parseUKDate with no time part gives 00:00 local, which is
 // exactly the "inclusive from the start of that day" semantics we want.
-export const ROUND = CONFIG.ROUND;
-export const ROUND_START = parseUKDate(CONFIG.ROUND.START);
+// ROUND starts as config.js says, then moves forward on its own: once a round
+// has been won and a later night has hands in it, that night opens the next
+// round (see rollRounds). ROUND, ROUND_START and ROUND_START_MS are live
+// bindings, so every page that imports them sees the round buildModel settled
+// on. buildModel resets them to config.js first, so each build starts clean.
+const BASE_ROUND = { ...CONFIG.ROUND };
+export const ROUND = { ...CONFIG.ROUND };
+export let ROUND_START = parseUKDate(CONFIG.ROUND.START);
 // Fail CLOSED if START is unparseable: an empty round is obviously wrong at a
 // glance, whereas failing open would sweep every session into the round, push
 // all four totals past TARGET and have the race page crown a false champion.
-export const ROUND_START_MS = ROUND_START ? ROUND_START.getTime() : Infinity;
+export let ROUND_START_MS = ROUND_START ? ROUND_START.getTime() : Infinity;
+
+function setRound(label, start) {
+  ROUND.LABEL = label;
+  ROUND_START = start;
+  ROUND_START_MS = start ? start.getTime() : Infinity;
+  ROUND.START = start
+    ? `${String(start.getDate()).padStart(2, "0")}/${String(start.getMonth() + 1).padStart(2, "0")}/${start.getFullYear()}`
+    : BASE_ROUND.START;
+}
+
+/** "Round 2" -> "Round 3". A label with no number just gets "(next)". */
+function nextRoundLabel(label) {
+  const m = /^(.*?)(\d+)(\D*)$/.exec(label);
+  return m ? `${m[1]}${Number(m[2]) + 1}${m[3]}` : `${label} (next)`;
+}
 
 /**
  * Is this date inside the current round? Null/unparseable dates are never in
@@ -422,12 +443,55 @@ function findFinish(records) {
       winners: home.filter((p) => running[p] === best),
       handNo: h.handNo,
       sessionLabel: h.sessionLabel,
+      sessionMs: h.sessionMs,
       tsMs: Number.isFinite(h.firstTsMs) ? h.firstTsMs : 0,
       totalsAtLine: { ...running },
       ranked: [...PLAYERS].sort((a, b) => running[b] - running[a]),
     };
   }
   return null;
+}
+
+/**
+ * Close every round that has been won and start the next one. House rules:
+ * the first player to reach the target wins, but the round runs to the end of
+ * that night, so every hand that night counts towards its final standings.
+ * The next round (same target, next number) starts with the next night that
+ * has hands. Until a later night appears, the won round stays current.
+ *
+ * Sets ROUND / ROUND_START to the current round and marks each record's
+ * inRound for it. Returns the rounds closed along the way, oldest first.
+ * CONFIG.ROUND.AUTO_NEXT = false turns this off (rounds then change only when
+ * config.js is edited).
+ */
+function rollRounds(records) {
+  setRound(BASE_ROUND.LABEL, parseUKDate(BASE_ROUND.START));
+  const mark = () => records.forEach((r) => { r.inRound = inRound(r.sessionDate); });
+  mark();
+  const past = [];
+  if (BASE_ROUND.AUTO_NEXT === false || !ROUND_START) return past;
+
+  for (let guard = 0; guard < 100; guard++) {
+    const f = findFinish(records);
+    if (!f) break;
+    const later = records
+      .filter((r) => r.sessionDate && r.sessionDate.getTime() > f.sessionMs)
+      .map((r) => r.sessionDate.getTime());
+    if (!later.length) break; // won, but still the latest night: the round runs on
+
+    const finalTotals = {};
+    PLAYERS.forEach((p) => (finalTotals[p] = 0));
+    records.forEach((r) => {
+      if (r.inRound && r.player in finalTotals && r.sessionDate.getTime() <= f.sessionMs) {
+        finalTotals[r.player] += r.score;
+      }
+    });
+    past.push({ label: ROUND.LABEL, start: ROUND_START, target: ROUND.TARGET, ...f, finalTotals });
+
+    setRound(nextRoundLabel(ROUND.LABEL), new Date(Math.min(...later)));
+    mark();
+  }
+  return past;
 }
 
 export function buildModel(rows) {
@@ -474,7 +538,7 @@ export function buildModel(rows) {
       tricksMade: num(r[COL.TRICKS_MADE]),
       doubled: String(r[COL.DOUBLED] ?? "").trim(),
       score: num(r[COL.SCORE]),
-      inRound: inRound(sessionDate),
+      inRound: false, // set by rollRounds once the current round is known
       // Which session this row belongs to. Derived from the parsed day so it
       // survives column B being written as text on one row and as a Sheets
       // date serial on the next, and rolled back over midnight so a night that
@@ -482,6 +546,9 @@ export function buildModel(rows) {
       sessionKey: dayKey(sessionDate) || String(r[COL.DATE] ?? "").trim() || "(no date)",
     };
   });
+
+  // Settle which round is current before anything round-scoped is counted.
+  const pastRounds = rollRounds(records);
 
   // ---- Per-player totals (all-time + current round) ----
   // handsPlayed counts this player's rows: the sheet holds one row per player
@@ -1129,7 +1196,8 @@ export function buildModel(rows) {
   return {
     records, grand, roundTotal, hcpTotal, hcpRound, efficiency, efficiencyRound,
     efficiencySession, declarerAll, declarerSession, declarerMadeAll, declarerMadeSession,
-    night, partnerships, recordBook: records_, pace, milestones, finish, contracts, luck, luckBands, quirks,
+    night, partnerships, recordBook: records_, pace, milestones, finish, pastRounds,
+    roundLabel: ROUND.LABEL, roundStart: ROUND_START, contracts, luck, luckBands, quirks,
     handsPlayed, hcpPerHand, hcpStats, hcpSession, hcpClashes, hcpAudit,
     sessions, allTime, sessionsRound, raceRound, latestRoundSession,
     latestHand, latestSession, latestSessionHands, latestSessionHcp,

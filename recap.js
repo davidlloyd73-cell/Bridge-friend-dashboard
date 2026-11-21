@@ -4,7 +4,7 @@
 // Pure: takes the model, returns a string. No DOM, so it can be tested alone.
 // =============================================================================
 
-import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261121b";
+import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261121c";
 
 const MEDALS = ["🥇", "🥈", "🥉", "4️⃣"];
 const SUITS = { clubs: "♣", diamonds: "♦", hearts: "♥", spades: "♠", "no trumps": "NT", notrumps: "NT", nt: "NT" };
@@ -110,7 +110,7 @@ export function buildRecap(m, siteUrl) {
     const lead = m.pace && m.pace[r.ranked[0]];
     if (m.finish) {
       const f = m.finish;
-      lines.push(`🏆 ${f.winners.join(" & ")} first to ${fmtNum(ROUND.TARGET)} (hand ${f.handNo}, ${f.sessionLabel}): ${ROUND.LABEL} is over`);
+      lines.push(`🏆 ${f.winners.join(" & ")} first to ${fmtNum(ROUND.TARGET)} (hand ${f.handNo}, ${f.sessionLabel}): ${ROUND.LABEL} is won, and the next round starts next session`);
     } else if (lead) {
       lines.push(`${r.ranked[0]} on pace to finish about ${lead.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`);
     }

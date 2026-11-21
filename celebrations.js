@@ -7,7 +7,7 @@
 // doesn't replay old news.
 // =============================================================================
 
-import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261121b";
+import { PLAYERS, ROUND, fmtNum } from "./data.js?v=20261121c";
 
 const SUITS = { clubs: "♣", diamonds: "♦", hearts: "♥", spades: "♠", "no trumps": "NT", notrumps: "NT", nt: "NT" };
 
@@ -23,12 +23,21 @@ export function celebrate(prev, next) {
   if (!prev || !next || next.rowCount <= prev.rowCount) return [];
   const out = [];
 
+  // A new round has begun (the last one was won and a new night started).
+  // Round totals reset, so none of the round comparisons below would mean
+  // anything; say so and skip the round comparisons below.
+  const newRound = prev.roundLabel !== next.roundLabel;
+  if (newRound) {
+    const last = (next.pastRounds || []).at(-1);
+    out.push(`🆕 ${next.roundLabel} is under way${last ? ` — ${last.winners.join(" & ")} won ${last.label}` : ""}.`);
+  }
+
   // Round finished: nothing else matters as much. Judged by the shared finish
   // in data.js (first to cross wins), so this can't name someone the race
   // page doesn't.
-  if (!prev.finish && next.finish) {
+  if (!newRound && !prev.finish && next.finish) {
     const f = next.finish, names = f.winners.join(" & ");
-    out.push(`🏆 ${names} ${f.winners.length > 1 ? "are" : "is"} home first! ${ROUND.LABEL} is over — ${fmtNum(f.totalsAtLine[f.winners[0]])}.`);
+    out.push(`🏆 ${names} ${f.winners.length > 1 ? "are" : "is"} home first! ${ROUND.LABEL} is won — ${fmtNum(f.totalsAtLine[f.winners[0]])}.`);
   }
 
   // A slam brought home on the newest hand.
@@ -46,7 +55,7 @@ export function celebrate(prev, next) {
   }
 
   // Passing a 10,000 mark in the round.
-  PLAYERS.forEach((p) => {
+  if (!newRound) PLAYERS.forEach((p) => {
     const before = Math.floor(prev.roundTotal[p] / 10000), after = Math.floor(next.roundTotal[p] / 10000);
     if (after > before && next.roundTotal[p] < ROUND.TARGET) {
       out.push(`🏁 ${p} passes ${fmtNum(after * 10000)} in ${ROUND.LABEL}.`);
@@ -60,7 +69,8 @@ export function celebrate(prev, next) {
     if (a && b && a !== b) out.push(`👑 ${b} takes the lead ${label}.`);
   };
   if (sameNight) lead("tonight", soleLeader(prev.latestSession.perPlayer), soleLeader(next.latestSession.perPlayer));
-  lead(`in ${ROUND.LABEL}`, soleLeader(prev.roundTotal), soleLeader(next.roundTotal));
+  // Once the round is won, the winner is settled: no "takes the lead" after it.
+  if (!newRound && !next.finish) lead(`in ${ROUND.LABEL}`, soleLeader(prev.roundTotal), soleLeader(next.roundTotal));
   lead("overall", soleLeader(grandTotals(prev)), soleLeader(grandTotals(next)));
 
   return out.slice(0, 3);
