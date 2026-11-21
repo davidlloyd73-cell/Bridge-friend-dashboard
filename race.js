@@ -4,11 +4,11 @@
 // always match the main dashboard's round-total column exactly.
 // =============================================================================
 
-import { CONFIG } from "./config.js?v=20261121b";
+import { CONFIG } from "./config.js?v=20261121c";
 import {
   PLAYERS, COLORS, fmtNum, fmtDate, fmtClock, escapeHtml, fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261121b";
+} from "./data.js?v=20261121c";
 
 // Both the target and the round's name come from CONFIG.ROUND — see config.js.
 const TARGET = CONFIG.ROUND.TARGET;
@@ -27,16 +27,18 @@ const $ = (sel) => document.querySelector(sel);
 // =============================================================================
 
 function buildRace(m) {
-  // Once someone has crossed, the race is frozen at that hand: totals are the
-  // ones at the line, and hands played afterwards don't move anyone. The
-  // finish itself is worked out once in data.js (first to cross wins).
+  // House rules: first to reach the target wins (worked out once in data.js),
+  // and the round runs to the end of that night, so totals keep moving until
+  // the next night opens the next round. Winners are listed first; everyone
+  // else by total.
   const f = m.finish;
   const totals = {};
-  PLAYERS.forEach((p) => { totals[p] = f ? f.totalsAtLine[p] : m.roundTotal[p]; });
+  PLAYERS.forEach((p) => { totals[p] = m.roundTotal[p]; });
 
-  const ranked = f ? [...f.ranked] : [...PLAYERS].sort((a, b) => totals[b] - totals[a]);
-  const raceOver = !!f;
   const winners = f ? f.winners : [];
+  const ranked = [...PLAYERS].sort((a, b) =>
+    (winners.includes(b) - winners.includes(a)) || totals[b] - totals[a]);
+  const raceOver = !!f;
   const winner = raceOver ? winners[0] : null;
   const leader = ranked[0];
   const leaderTotal = totals[leader];
@@ -62,8 +64,8 @@ function statusLine(player, race) {
     }
     if (place === race.winners.length + 1) {
       return toGo > 0
-        ? `🥈 2nd place — ${fmtNum(toGo)} short at the line.`
-        : `🥈 2nd place — over the line on the same hand, just behind.`;
+        ? `🥈 2nd place — ${fmtNum(toGo)} short.`
+        : `🥈 2nd place — past ${fmtNum(TARGET)} too, but not first.`;
     }
     if (place === race.ranked.length) return `🥄 Wooden spoon — better luck next round.`;
     return `${ordinal(place)} place — ${fmtNum(total)} points.`;
@@ -90,19 +92,40 @@ function renderBanner(race) {
   if (!race.raceOver) { el.hidden = true; el.innerHTML = ""; return; }
 
   const f = race.finish;
-  const second = race.ranked.find((p) => !race.winners.includes(p));
-  const margin = race.totals[race.winner] - race.totals[second];
   const color = COLORS[race.winner];
   const names = race.winners.map((w) => escapeHtml(w)).join(" and ");
   const shared = race.winners.length > 1;
-  const where = `on hand ${escapeHtml(f.handNo)}, ${escapeHtml(f.sessionLabel)}`;
 
   el.hidden = false;
   el.style.setProperty("--pf-color", color);
   el.innerHTML = `
-    <div class="pf-main">🏁 ${names} ${shared ? "share the win" : "is home"}! ${escapeHtml(ROUND.LABEL)} is over.</div>
-    <div class="pf-sub">Crossed ${fmtNum(TARGET)} first, ${where} · <b>${fmtNum(race.totals[race.winner])}</b> · ${fmtNum(margin)} clear of ${escapeHtml(second)}</div>
-    <div class="pf-extra">First to cross wins. This page is frozen at that hand, so later hands can't change the result.</div>`;
+    <div class="pf-main">🏁 ${names} ${shared ? "share the win" : "is home"}! ${escapeHtml(ROUND.LABEL)} is won.</div>
+    <div class="pf-sub">First to ${fmtNum(TARGET)}: hand ${escapeHtml(f.handNo)}, ${escapeHtml(f.sessionLabel)}, on <b>${fmtNum(f.totalsAtLine[race.winner])}</b>.</div>
+    <div class="pf-extra">The round runs to the end of this session, so the totals below still count tonight's hands. ${escapeHtml(nextLabel())} starts on its own the next time you play.</div>`;
+}
+
+/** The label the next round will get ("Round 2" -> "Round 3"). */
+function nextLabel() {
+  const m = /^(.*?)(\d+)(\D*)$/.exec(ROUND.LABEL);
+  return m ? `${m[1]}${Number(m[2]) + 1}${m[3]}` : "The next round";
+}
+
+/** Past rounds this page has seen finish, newest first. */
+function renderHonours(m) {
+  const panel = $("#honours-panel"), body = $("#honours");
+  if (!panel || !body) return;
+  const past = m.pastRounds || [];
+  panel.hidden = past.length === 0;
+  body.innerHTML = [...past].reverse().map((r) => {
+    const order = [...PLAYERS].sort((a, b) =>
+      (r.winners.includes(b) - r.winners.includes(a)) || r.finalTotals[b] - r.finalTotals[a]);
+    return `
+      <div class="honour" style="--pc:${COLORS[r.winners[0]]}">
+        <div class="honour-head"><b>${escapeHtml(r.label)}</b> · 🏆 ${r.winners.map(escapeHtml).join(" &amp; ")}</div>
+        <div class="honour-sub muted">First to ${fmtNum(r.target)} on hand ${escapeHtml(r.handNo)}, ${escapeHtml(r.sessionLabel)} ·
+          final: ${order.map((p) => `${escapeHtml(p)} ${fmtNum(r.finalTotals[p])}`).join(", ")}</div>
+      </div>`;
+  }).join("");
 }
 
 /** Faint marks on the track at each 10,000, so progress reads against something. */
@@ -213,10 +236,12 @@ function renderFooterNote() {
 function renderAll(m) {
   const race = buildRace(m);
   renderHeader(m);
+  renderFooterNote(); // the round can move on between refreshes
   renderBanner(race);
   renderTrack(race);
   renderStrip(race);
   renderMilestones(m);
+  renderHonours(m);
   return race;
 }
 
@@ -228,6 +253,7 @@ function logVerification(m, race) {
   verifyRound(m);
   console.log("Leader:", race.leader, fmtNum(race.leaderTotal), `· target ${fmtNum(TARGET)}`);
   if (race.raceOver) console.log("Winner:", race.winners.join(" & "), "· hand", race.finish.handNo, race.finish.sessionLabel);
+  (m.pastRounds || []).forEach((r) => console.log(`${r.label}: won by ${r.winners.join(" & ")} (hand ${r.handNo}, ${r.sessionLabel}); final`, r.finalTotals));
   /* eslint-enable no-console */
 }
 let verificationLogged = false;

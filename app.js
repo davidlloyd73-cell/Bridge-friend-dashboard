@@ -5,15 +5,15 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { celebrate } from "./celebrations.js?v=20261121b";
-import { buildRecap, nightLines } from "./recap.js?v=20261121b";
-import { initCommentator } from "./commentator.js?v=20261121b";
-import { CONFIG } from "./config.js?v=20261121b";
+import { celebrate } from "./celebrations.js?v=20261121c";
+import { buildRecap, nightLines } from "./recap.js?v=20261121c";
+import { initCommentator } from "./commentator.js?v=20261121c";
+import { CONFIG } from "./config.js?v=20261121c";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261121b";
+} from "./data.js?v=20261121c";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -135,10 +135,18 @@ function renderHeadline(m) {
       round ? leadSentence(round) : '<span class="muted">Not started</span>'));
   }
 
+  // On the first night of a new round, still give the last round's winner a
+  // mention; after that the race page's Honours keeps the record.
+  const last = (m.pastRounds || []).at(-1);
+  if (last && (m.sessionsRound || []).length === 1) {
+    items.push(headlineItem(`${last.label} champion`,
+      `🏆 <b>${last.winners.map(escapeHtml).join(" &amp; ")}</b> <span class="muted">&middot; first to ${fmtNum(last.target)}</span>`));
+  }
+
   if (m.finish) {
     const f = m.finish;
     items.push(headlineItem(`${ROUND.LABEL} champion`,
-      `🏆 <b>${f.winners.map(escapeHtml).join(" &amp; ")}</b> <span class="muted">&middot; first to ${fmtNum(ROUND.TARGET)}, hand ${escapeHtml(f.handNo)}, ${escapeHtml(f.sessionLabel)}</span>`));
+      `🏆 <b>${f.winners.map(escapeHtml).join(" &amp; ")}</b> <span class="muted">&middot; first to ${fmtNum(ROUND.TARGET)}, hand ${escapeHtml(f.handNo)}, ${escapeHtml(f.sessionLabel)} &middot; the next round starts next session</span>`));
   } else if (round) {
     const pct = Math.min(100, Math.round((round.top / ROUND.TARGET) * 100));
     const pace = m.pace && m.pace[round.leaders[0]];
@@ -1560,4 +1568,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261121b";
+export { buildModel, parseUKDate } from "./data.js?v=20261121c";

@@ -1,4 +1,4 @@
-@import url("tokens.css?v=20261121b");
+@import url("tokens.css?v=20261121c");
 
 /* =============================================================================
    race.css — "Race to 50,000" live page
@@ -331,3 +331,9 @@ main {
   #milestones-table .swatch { display: none; }
   .ms-gold { display: block; }
 }
+
+/* ---------- Honours (past rounds) ---------- */
+.honours { display: grid; gap: 10px; }
+.honour { border-left: 4px solid var(--pc, var(--gold)); padding: 6px 0 6px 12px; }
+.honour-head { font-family: var(--font-display); font-size: 1.05rem; }
+.honour-sub { font-size: .85rem; margin-top: 2px; }

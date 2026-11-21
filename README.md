@@ -118,25 +118,36 @@ Open that URL — the dashboard is live. 🎉
 | `race.html` / `race.js` / `race.css` | The live "Race to 50,000" page. |
 | `README.md`  | This file. |
 
-### 🏆 Who wins the round
+### 🏆 Who wins the round, and when the next one starts
 
-**First to cross wins.** The winner is whoever reaches `ROUND.TARGET` first,
-on the exact hand it happens. Hands played later that night (or after) can't
-take it away, even if someone else ends up higher.
+House rules (agreed 21 Nov 2026):
+
+1. **First to reach the target wins**, on the exact hand it happens. Someone
+   who overtakes later that night doesn't take it away.
+2. **The round runs to the end of that night.** Every hand that night still
+   counts towards the round's final standings.
+3. **The next round starts by itself** with the next night that has hands:
+   "Round 2" becomes "Round 3", with the same target. Nobody needs to edit
+   `config.js`.
+
+How "first" is decided:
 
 - Hands are taken in the order they were played: by night, then by when the
-  hand was first logged on the form (a mistyped hand number can't reorder
+  hand was first logged on the form (so a mistyped hand number can't reorder
   them), then by hand number.
 - All four entries for a hand count together, so partners who cross on the
-  same hand aren't split by who filled in the form first. Then the higher
-  total wins, and an exact tie is a shared win.
-- This is worked out once, in `data.js` (`findFinish`, returned as
-  `model.finish`). The race page, the dashboard headline, the 50,000
-  milestone, the celebration toast and the WhatsApp recap all read that one
-  result, so they can't disagree. Once someone is home, the race page freezes
-  at that hand.
-- Hands logged after the finish still add to the Round tab totals until a new
-  round is started (below).
+  same hand aren't split by who filled in the form first. If two players cross
+  on the same hand, the higher total wins, and an exact tie is a shared win.
+- A hand played after midnight still belongs to the evening it started (see
+  *Sessions that run past midnight*), so it never opens a new round on its own.
+
+This is all worked out in one place, `data.js` (`findFinish` and
+`rollRounds`), which gives every page `model.finish` (the current round's
+winner, if any), `model.pastRounds` (each finished round's winner, winning
+hand and final standings) and the current `ROUND`. The race page (banner and
+**Honours** list), the dashboard headline, the 50,000 milestone, the
+celebration toasts and the WhatsApp recap all read those, so they can't
+disagree. The browser console on the race page lists every finished round.
 
 ### 🏁 Starting a new round
 
@@ -149,10 +160,15 @@ ROUND: {
   LABEL: "Round 2",        // shown in headings, column headers and footnotes
   START: "10/07/2026",     // dd/mm/yyyy, INCLUSIVE — the first session of the round
   TARGET: 50000,           // points needed to win
+  AUTO_NEXT: true,         // start the next round by itself once this one is won
 },
 ```
 
-To start a fresh round, change those three values — nothing else. All-time
+You normally **don't** need to touch this: each round starts by itself (see
+above), and `START` only has to mark where the counting begins. Edit it by
+hand only to change the target, rename the rounds, or restart the counting
+from a particular night (set `AUTO_NEXT: false` to turn the automatic rounds
+off). If you do, change those values — nothing else. All-time
 totals and the all-time chart are unaffected. Open the browser console
 afterwards: a **"round scoping verification"** group prints each player's round
 total next to the raw column-L sum, plus the list of sessions in the round, so
