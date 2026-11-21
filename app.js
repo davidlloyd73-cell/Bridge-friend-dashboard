@@ -5,15 +5,15 @@
 // Fetch/parse/compute logic lives in data.js (shared with race.js).
 // =============================================================================
 
-import { celebrate } from "./celebrations.js?v=20261121a";
-import { buildRecap, nightLines } from "./recap.js?v=20261121a";
-import { initCommentator } from "./commentator.js?v=20261121a";
-import { CONFIG } from "./config.js?v=20261121a";
+import { celebrate } from "./celebrations.js?v=20261121b";
+import { buildRecap, nightLines } from "./recap.js?v=20261121b";
+import { initCommentator } from "./commentator.js?v=20261121b";
+import { CONFIG } from "./config.js?v=20261121b";
 import {
   PLAYERS, COLORS, colorHex, COL, fmtNum, fmtDate, fmtClock, escapeHtml,
   fetchRows, buildModel, parseUKDate,
   ROUND, ROUND_START, verifyRound,
-} from "./data.js?v=20261121a";
+} from "./data.js?v=20261121b";
 
 // ---- Polling / backoff state ----
 let pollTimer = null;
@@ -127,11 +127,19 @@ function renderHeadline(m) {
   items.push(headlineItem("Tonight",
     tonight ? leadSentence(tonight) : '<span class="muted">No scores yet</span>'));
 
+  // Once the round is won, the champion replaces the running leader: hands
+  // played after the finish still add up, but they can't change who won.
   const round = leadOf(m.roundTotal);
-  items.push(headlineItem(ROUND.LABEL,
-    round ? leadSentence(round) : '<span class="muted">Not started</span>'));
+  if (!m.finish) {
+    items.push(headlineItem(ROUND.LABEL,
+      round ? leadSentence(round) : '<span class="muted">Not started</span>'));
+  }
 
-  if (round) {
+  if (m.finish) {
+    const f = m.finish;
+    items.push(headlineItem(`${ROUND.LABEL} champion`,
+      `🏆 <b>${f.winners.map(escapeHtml).join(" &amp; ")}</b> <span class="muted">&middot; first to ${fmtNum(ROUND.TARGET)}, hand ${escapeHtml(f.handNo)}, ${escapeHtml(f.sessionLabel)}</span>`));
+  } else if (round) {
     const pct = Math.min(100, Math.round((round.top / ROUND.TARGET) * 100));
     const pace = m.pace && m.pace[round.leaders[0]];
     const when = pace
@@ -1552,4 +1560,4 @@ if (typeof document !== "undefined") {
 
 // Exported for unit testing (no effect in the browser). Re-exported from
 // data.js, which is now the single source of truth for parsing/computing.
-export { buildModel, parseUKDate } from "./data.js?v=20261121a";
+export { buildModel, parseUKDate } from "./data.js?v=20261121b";
