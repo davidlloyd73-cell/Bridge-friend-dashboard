@@ -71,3 +71,13 @@
 .pz-next { font: 600 .95rem var(--font-body); min-height: 40px; padding: 6px 16px; border-radius: 999px; border: 0;
   background: var(--gold); color: var(--navy-900); cursor: pointer; }
 .pz-streak { font-size: .78rem; }
+
+/* Points quiz (card 13) */
+.pz-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; max-width: 360px; margin: 6px 0 8px; }
+.pz-opt { font: 600 1rem var(--font-mono); min-height: 44px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--navy-800); color: var(--ink); cursor: pointer; }
+.pz-opt:hover:not(:disabled) { border-color: var(--teal); }
+.pz-opt:disabled { opacity: .55; cursor: default; }
+.pz-opt.pz-right { outline: 3px solid var(--good); outline-offset: 1px; opacity: 1; }
+.pz-opt.pz-wrong { outline: 3px solid var(--bad); outline-offset: 1px; opacity: 1; }
+.pz-opt:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }

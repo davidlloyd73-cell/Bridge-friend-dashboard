@@ -11,7 +11,7 @@
 // bubble steps through the same sentences in silence.
 // =============================================================================
 
-import { PLAYERS, fmtNum } from "./data.js?v=20261121e";
+import { PLAYERS, fmtNum } from "./data.js?v=20261121f";
 
 const SUIT_WORDS = {
   clubs: "clubs", diamonds: "diamonds", hearts: "hearts", spades: "spades",
