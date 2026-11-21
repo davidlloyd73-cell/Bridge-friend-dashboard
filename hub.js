@@ -62,76 +62,14 @@
       render("news-theatre", w.theatre, true);
       render("news-music", w.music, true);
       render("news-food", w.food, true);
-      render("news-bridge", w.bridge, false);
       render("news-doom", w.doom, false);
       doom(w.doom);
       document.getElementById("hub-updated").textContent = "News updated " + ago(d.updated);
     })
     .catch(function () {
       document.getElementById("hub-updated").textContent = "Couldn't load the news just now.";
-      ["art", "film", "theatre", "music", "food", "bridge", "doom"].forEach(function (k) { render("news-" + k, [], false); });
+      ["art", "film", "theatre", "music", "food", "doom"].forEach(function (k) { render("news-" + k, [], false); });
     });
-
-  // ---- Hand of the day: the same deal for everyone, seeded by the date -------
-  var SUITS = ["\u2660", "\u2665", "\u2666", "\u2663"];
-  var RANKS = "AKQJT98765432";
-  var VUL = ["None", "N-S", "E-W", "Both", "N-S", "E-W", "Both", "None", "E-W", "Both", "None", "N-S", "Both", "None", "N-S", "E-W"];
-
-  function rng(seed) {                       // mulberry32
-    return function () {
-      seed = (seed + 0x6D2B79F5) | 0;
-      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  function dealOfTheDay() {
-    var now = new Date();
-    var day = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 864e5);
-    var rand = rng(day * 2654435761);
-    var deck = [];
-    for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) deck.push([s, r]);
-    for (var i = 51; i > 0; i--) {
-      var j = Math.floor(rand() * (i + 1)), x = deck[i]; deck[i] = deck[j]; deck[j] = x;
-    }
-    var hands = [0, 1, 2, 3].map(function (h) {
-      return deck.slice(h * 13, h * 13 + 13).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
-    });
-    var board = day % 16 + 1;
-    return { hands: hands, board: board, dealer: "NESW"[(board - 1) % 4], vul: VUL[board - 1] };
-  }
-
-  function handNode(cls, label, cards) {
-    var d = el("div", "hand " + cls);
-    var hcp = cards.reduce(function (n, c) { return n + Math.max(0, 4 - c[1]); }, 0);
-    d.appendChild(el("b", null, label + " \u00B7 " + hcp + " HCP"));
-    for (var s = 0; s < 4; s++) {
-      var line = el("div");
-      var sym = el("span", s === 1 || s === 2 ? "red" : null, SUITS[s] + " ");
-      line.appendChild(sym);
-      var held = cards.filter(function (c) { return c[0] === s; }).map(function (c) { return RANKS[c[1]]; }).join("");
-      line.appendChild(document.createTextNode(held.replace("T", "10") || "\u2014"));
-      d.appendChild(line);
-    }
-    return d;
-  }
-
-  function showDeal() {
-    var host = document.getElementById("deal");
-    if (!host) return;
-    var d = dealOfTheDay();
-    host.appendChild(handNode("n", "North", d.hands[0]));
-    host.appendChild(handNode("w", "West", d.hands[3]));
-    var info = el("div", "info");
-    info.appendChild(el("div", null, "Hand of the day"));
-    info.appendChild(el("div", null, "Board " + d.board));
-    info.appendChild(el("div", null, "Dealer " + d.dealer));
-    info.appendChild(el("div", null, "Vul " + d.vul));
-    host.appendChild(info);
-    host.appendChild(handNode("e", "East", d.hands[1]));
-    host.appendChild(handNode("s", "South", d.hands[2]));
-  }
 
   // ---- London now: weather (Open-Meteo) and Tube status (TfL), both keyless --
   function wxIcon(c) {
@@ -185,7 +123,6 @@
       .catch(function () { host.textContent = ""; host.appendChild(el("p", "muted", "Tube status unavailable.")); });
   }
 
-  showDeal();
   showWeather();
   showTube();
   setInterval(showTube, 5 * 60 * 1000);

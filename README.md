@@ -109,6 +109,9 @@ Open that URL — the dashboard is live. 🎉
 |--------------|------------|
 | `index.html` | Page structure (the Bridge dashboard; `hub.html` is the news hub) + the Chart.js CDN tag. |
 | `styles.css` | Dashboard styling. Imports `tokens.css`; declares no colours of its own. |
+| `bridge-puzzle.js` | The hub's **Bridge problem** window: deals a random hand and works out the answer. Bidding follows Andrew Robson's flip chart (Acol: 12–14 1NT, Rule of 20, Rule of 14, support line, SQOT, level of the fit); card play uses standard defence (opening lead v NT, third hand high, second hand low, cover an honour). Hands the chart doesn't clearly settle are thrown away and re-dealt. Pure logic, no page code. |
+| `puzzle-ui.js` / `puzzle.css` | Draws that window: auction grid (N E S W, dealer and "You" marked), your hand by suit, a bidding box with only legal bids or clickable cards, then right/wrong with the reason and **Next problem**. `hub.html?p=<number>` reopens a problem by its number. |
+| `scripts/test_puzzle.mjs` | Tests for the problems: the flip chart's own examples plus 20,000 generated problems. Run `node scripts/test_puzzle.mjs` after changing a rule. |
 | `switch.css` | The big **♠ Bridge \| 📰 Hub** switch at the top of `index.html` and `hub.html`. The page you're on is lit gold; tap the other half to go there. It hides itself when the dashboard is shown inside the hub's Bridge window, so you never see two. |
 | `tokens.css` | **All design tokens** — the navy/teal/gold palette, player colours, shadow, radius and the three font stacks. Shared by both pages; edit a colour here and both follow. |
 | `app.js`     | Fetches the sheet, parses it defensively, computes all the stats, renders, and runs the 60-second polling loop. |
@@ -229,8 +232,9 @@ change anything, bump that value **everywhere** — each of those is a separate
 fetch, so bumping only the `<script>` tags would leave browsers running a cached
 `data.js` (where most of the logic lives) or a cached `tokens.css` (where every
 colour lives). The hub (`hub.html`) uses the same value on its own files, and
-both `index.html` and `hub.html` load `switch.css` with it. Twenty-six places in
-total; grep for the current value to find them.
+both `index.html` and `hub.html` load `switch.css` with it. Twenty-nine places in
+total, counting `hub.html`'s `puzzle.css` and `puzzle-ui.js` and that file's
+import of `bridge-puzzle.js`; grep for the current value to find them.
 
 ### Player colours
 David = **blue**, Vivienne = **green**, Hamish = **orange**, Caroline =

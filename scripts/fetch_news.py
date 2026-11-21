@@ -33,9 +33,6 @@ WINDOWS = {
         ("The Guardian", "https://www.theguardian.com/stage/rss"),
         ("Evening Standard", "https://www.standard.co.uk/culture/theatre/rss"),
     ],
-    "bridge": [
-        ("World Bridge Federation", "https://www.worldbridge.org/feed/"),
-    ],
     "music": [
         ("The Guardian", "https://www.theguardian.com/music/classicalmusicandopera/rss"),
         ("Slipped Disc", "https://slippedisc.com/feed/"),

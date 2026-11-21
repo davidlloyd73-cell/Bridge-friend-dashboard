@@ -59,18 +59,9 @@ a:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-ra
 .tube-line .st { color: var(--bad); text-align: right; }
 .tube-note { margin: 8px 0 0; font-size: .75rem; color: var(--muted); }
 
-.deal { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-areas: ". n ." "w info e" ". s ."; gap: 6px; margin-bottom: 10px;
-  font: 400 .8rem/1.5 var(--font-mono); }
-.deal .hand { background: var(--navy-700); border-radius: 8px; padding: 6px 8px; white-space: nowrap; }
-.deal .hand b { display: block; font-size: .7rem; color: var(--muted); font-weight: 600; }
-.deal .n { grid-area: n; } .deal .e { grid-area: e; } .deal .s { grid-area: s; } .deal .w { grid-area: w; }
-.deal .info { grid-area: info; align-self: center; text-align: center; color: var(--gold); font-size: .75rem; }
-.deal .red { color: var(--bad); }
-
 @media (max-width: 560px) {
   .hub-header { padding: 12px 14px; }
   .hub-grid { padding: 12px 14px 28px; }
   .bridge-frame { height: 480px; }
-  .deal { font-size: .72rem; }
 }
 @media (prefers-reduced-motion: reduce) { .doom-fill { transition: none; } }
