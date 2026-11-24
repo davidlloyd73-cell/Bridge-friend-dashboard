@@ -5,7 +5,9 @@
 // BIDDING follows Andrew Robson's flip chart (Acol: 12-14 1NT, four-card
 // majors, "Rule of 20" to open, "Rule of 14" to respond at the two level,
 // SQOT for overcalls, "Level of the Fit" over partner's overcall). Card numbers
-// in the explanations refer to that chart.
+// in the explanations refer to that chart. "Tip 2♣", "Tip 3♣"... refer to his
+// book "Bridge: A Pack of Do's and Don'ts", one tip per playing card (see
+// ROBSON'S TIPS below).
 //
 // How a problem is made: deal a random hand, then work out the answer with the
 // chart's rules. Anything the chart does not settle clearly (Stayman, doubles,
@@ -1287,8 +1289,120 @@ function genScoring(rand) {
     why: down
       ? `Card 13's undertrick table, ${vtxt}: ${n} down doubled = ${ans} (1 down ${DOWN[vul ? "v" : "nv"][0]}, 2 down ${DOWN[vul ? "v" : "nv"][1]}, 3 down ${DOWN[vul ? "v" : "nv"][2]}...).`
       : `Doubled overtricks are worth ${vul ? 200 : 100} each ${vtxt}, whatever the suit: ${n} × ${vul ? 200 : 100} = ${ans}. (You also double the trick score below the line and add 50 "for the insult".)`,
-    card: "Card 13 · Scoring doubled contracts", tag: "Scoring",
+    card: "Card 13 · Scoring doubled contracts", tag: "Scoring", unit: " points",
   };
+}
+
+// =============================================================================
+// ROBSON'S TIPS ("Bridge: A Pack of Do's and Don'ts", one tip per playing card)
+// Tip 2♣: see whether your hand is balanced or unbalanced when you can open.
+// Tip 3♣: open the higher ranking of two equal-length suits, except 1♥ with
+//         four-four in hearts and spades.
+// =============================================================================
+const TIP2C = "Tip 2♣ · Balanced or unbalanced?";
+const TIP3C = "Tip 3♣ · Two suits of equal length";
+const dashed = (h) => h.shape.split("").join("-");
+
+/** Tip 2♣ — is this opening hand balanced? (No void, no singleton, at most one
+ *  doubleton: only 4432, 4333 and 5332.) */
+export function balancedWhy(h) {
+  const doubletons = h.len.filter((l) => l === 2).length;
+  if (h.bal) {
+    const plan = h.hcp <= 14 ? "open 1NT (12–14)" : "open one of a suit and rebid no-trumps (too strong for 1NT)";
+    return `Balanced: no void, no singleton and ${doubletons ? "only one doubleton" : "no doubleton"}. Your shape is ${dashed(h)}, one of the three balanced shapes (4432, 4333, 5332). A balanced hand plans to open or rebid no-trumps: with ${h.hcp} points, ${plan}.`;
+  }
+  const single = h.len.findIndex((l) => l === 1);
+  const reason = single >= 0 ? `${shortHolding(1, single)}`
+    : doubletons > 1 ? "more than one doubleton"
+    : "a six-card suit (only 4432, 4333 and 5332 are balanced)";
+  return `Unbalanced: your shape is ${dashed(h)}, with ${reason}. An unbalanced hand won't normally bid no-trumps with its first or second bid: open your longest suit and plan to rebid a suit.`;
+}
+function genBalanced(rand) {
+  const h = makeHand(shuffledDeck(rand).slice(0, 13));
+  if (h.hcp < 12 || h.hcp > 19) return null;
+  if (Math.max(...h.len) >= 7 || h.len.includes(0)) return null; // too obvious
+  const ans = h.bal ? "Balanced" : "Unbalanced";
+  return {
+    kind: "choice", hand: h, options: ["Balanced", "Unbalanced"], answers: [ans], best: ans,
+    question: "You have enough to open. Is this hand balanced or unbalanced?",
+    why: balancedWhy(h), card: TIP2C, tag: "Balanced or not?",
+  };
+}
+
+/** Tip 3♣ — opening with two suits of equal length (four-four or five-five). */
+export function twoSuitOpening(h) {
+  const m = Math.max(...h.len), tied = [0, 1, 2, 3].filter((s) => h.len[s] === m);
+  if (tied.length !== 2 || m > 5 || h.hcp > 19) return null;
+  const o = openingBidFor(h);
+  if (!o || o.answer === "P") return null;
+  const [lo, hi] = tied, both = `${SUIT_NAME[lo]} and ${SUIT_NAME[hi]}`;
+  if (o.answer === "1N") {
+    return { answer: "1N", why: `Trap! You are four-four in ${both}, but the hand is balanced with ${h.hcp} points, and every balanced 12–14 opens 1NT. Choosing between the suits only matters from 15 points up.`, card: TIP3C };
+  }
+  let why;
+  if (m === 4 && lo === 2 && hi === 3) {
+    why = `Four-four in hearts and spades is the one exception to "higher ranking": open 1♥, which gives partner a cheap chance to bid 1♠. Open 1♠ and you may miss a heart fit, because a 2♥ response needs a five-card suit and more than minimum values. Being balanced (${h.hcp} points), you plan to rebid no-trumps.`;
+  } else if (m === 4) {
+    why = `Four-four in ${both}: open the higher ranking, 1${SYM[hi]}. Being balanced (${h.hcp} points, too strong for 1NT) you will rebid no-trumps next, so this is your only chance to show ${SUIT_NAME[hi]}${hi >= 2 ? " — open the lower suit and a fit there could be missed" : ""}.`;
+  } else {
+    why = `Five-five in ${both}: open the higher ranking, 1${SYM[hi]}, planning to bid ${SUIT_NAME[lo]} next. That is more economical than the other way round: partner can go back to your first suit without raising the level.${lo === 2 && hi === 3 ? " (The 1♥ exception is only for four-four.)" : ""}`;
+  }
+  return { answer: bid(1, hi === 3 && lo === 2 && m === 4 ? 2 : hi), why, card: TIP3C };
+}
+function genTwoSuitOpening(rand) {
+  const h = makeHand(shuffledDeck(rand).slice(0, 13));
+  const r = twoSuitOpening(h);
+  if (!r) return null;
+  if (r.answer === "1N" && rand() < 0.75) return null; // keep the trap from dominating
+  return { calls: rand() < 0.5 ? [] : ["P"], hand: h, ...r, tag: "Which suit to open" };
+}
+
+/** Tip 2♣ (with tip 3♣'s auctions) — opener's planned rebid. You opened 1X and
+ *  partner responded `resp` (a new suit or 1NT), opponents silent.
+ *  Balanced 15–16: no-trumps at the lowest level. Unbalanced: a second suit
+ *  (five-four or five-five), or repeat a six-card suit. */
+export function openerRebid(h, X, resp) {
+  const r = parseBid(resp), Y = r.strain;
+  if (Y < 4 && h.len[Y] >= 4) return null; // four-card support for partner: a different lesson
+  const sx = SYM[X];
+  if (h.bal) {
+    if (h.hcp < 15 || h.hcp > 16) return null; // 12–14 opened 1NT; 17+ jumps, not on this tip
+    if (Y === 4) return null; // partner bid 1NT: pass or invite is judgement
+    if (X === 3 && Y === 2 && h.len[2] >= 3) return null; // 1♠–2♥ shows five hearts: you'd support
+    const nt = bid(r.level, 4);
+    const dont = h.len[X] >= 5 ? ` It would be a mistake to repeat your ${SUIT_NAME[X]}: that shows an unbalanced hand.` : "";
+    return { answer: nt, why: `Balanced (${dashed(h)}) with ${h.hcp} points: too strong to open 1NT, so you opened 1${sx} planning to rebid no-trumps. No-trumps at the lowest level, ${bidText(nt)}, shows a balanced 15–16.${dont}`, card: TIP2C };
+  }
+  if (h.hcp > 15) return null; // stronger unbalanced hands may jump: not on this tip
+  const L = h.len[X], side = [0, 1, 2, 3].filter((s) => s !== X && h.len[s] >= 4);
+  if (L === 6) {
+    if (side.length) return null; // six-four: repeat or show the second suit?
+    return { answer: bid(2, X), why: `Unbalanced with six ${SUIT_NAME[X]} (${suitList(h, X)}) and no second suit: repeat them at the lowest level, 2${sx}. Rebidding your suit implies six cards.`, card: TIP2C };
+  }
+  if (L !== 5 || side.length !== 1) return null;
+  const s2 = side[0];
+  const lv = bidRank(bid(1, s2)) > bidRank(resp) ? 1 : 2;
+  if (bidRank(bid(lv, s2)) <= bidRank(resp)) return null; // would need the three level
+  if (lv === 2 && s2 > X) return null; // a "reverse" needs extra strength: not on this tip
+  const five5 = h.len[s2] === 5;
+  return {
+    answer: bid(lv, s2),
+    why: `Unbalanced (${dashed(h)}), so don't rebid no-trumps. You opened your ${five5 ? "higher-ranking five-card suit" : "five-card suit"} and now show your second suit, ${SUIT_NAME[s2]}, at the lowest level: ${lv}${SYM[s2]}. ${five5 ? `Partner can go back to ${SUIT_NAME[X]} at the same level.` : "Opening one suit and rebidding another implies a five-four shape."}`,
+    card: five5 ? TIP3C : TIP2C,
+  };
+}
+function genOpenerRebid(rand) {
+  const h = makeHand(shuffledDeck(rand).slice(0, 13));
+  const o = openingBidFor(h);
+  if (!o || !/^1[CDHS]$/.test(o.answer)) return null;
+  const X = parseBid(o.answer).strain;
+  const resps = ["1N"];
+  for (let s = 0; s < 4; s++) if (s !== X) resps.push(bid(s > X ? 1 : 2, s));
+  const resp = pick(rand, resps);
+  const r = openerRebid(h, X, resp);
+  if (!r) return null;
+  const calls = [o.answer, "P", resp, "P"];
+  return { calls: rand() < 0.5 ? calls : ["P", ...calls], hand: h, ...r, tag: "Opener's rebid" };
 }
 
 // =============================================================================
@@ -1296,6 +1410,9 @@ function genScoring(rand) {
 // =============================================================================
 export const TYPES = [
   { key: "open", kind: "bid", w: 3, make: genOpening },
+  { key: "balanced", kind: "bid", w: 1, make: genBalanced },
+  { key: "open2suits", kind: "bid", w: 1.5, make: genTwoSuitOpening },
+  { key: "rebid", kind: "bid", w: 2.5, make: genOpenerRebid },
   { key: "respond", kind: "bid", w: 3, make: genRespondSuit },
   { key: "rebid1nt", kind: "bid", w: 2, make: genOpenerAfter1NT },
   { key: "resp1nt", kind: "bid", w: 2, make: genRespond1NT },

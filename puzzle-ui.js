@@ -9,7 +9,7 @@
 
 import {
   makeProblem, legalBids, bidText, parseCard, cardId, rankStr, SYM, SEAT_NAME,
-} from "./bridge-puzzle.js?v=20261121j";
+} from "./bridge-puzzle.js?v=20261124a";
 
 const STORE = "bridgePuzzleStreak";
 const RED = new Set([1, 2]); // diamonds, hearts
@@ -164,7 +164,7 @@ function biddingBox(p, onPick) {
 
 function answerText(p, a) {
   if (p.kind === "bid") return bidText(a);
-  if (p.kind === "choice") return `${a} points`;
+  if (p.kind === "choice") return `${a}${p.unit || ""}`;
   if (p.kind === "suit") {
     const [who, r] = a.split(":");
     return `${SYM[p.suit]}${rankStr(Number(r))} from ${who === "Y" ? "your hand" : "dummy"}`;
@@ -198,12 +198,17 @@ export function initPuzzle(host, meta) {
     if (p.kind === "choice") {
       const opts = h("div", "pz-options");
       p.options.forEach((o) => {
-        const b = h("button", "pz-opt", `${o} points`);
+        const b = h("button", "pz-opt", `${o}${p.unit || ""}`);
         b.type = "button";
         b.dataset.opt = o;
         b.addEventListener("click", () => answer(o));
         opts.appendChild(b);
       });
+      if (p.hand) {
+        const hands = h("div", "pz-hands");
+        hands.appendChild(handBlock("Your hand", p.hand));
+        host.appendChild(hands);
+      }
       host.appendChild(opts);
     } else if (p.kind === "suit") {
       host.appendChild(suitBlock(p, pickCard));
@@ -259,7 +264,7 @@ export function initPuzzle(host, meta) {
         : `✗ Not this time: the answer is ${answerText(p, p.best)}.`;
       fb.appendChild(h("p", "pz-verdict", verdict));
       fb.appendChild(h("p", "pz-why", p.why));
-      fb.appendChild(h("p", "pz-source", p.card + (/^(Card \d|Conventions)/.test(p.card) ? " (Andrew Robson flip chart)" : "")));
+      fb.appendChild(h("p", "pz-source", p.card + (/^(Card \d|Conventions)/.test(p.card) ? " (Andrew Robson flip chart)" : /^Tip /.test(p.card) ? " (Andrew Robson, Bridge: A Pack of Do's and Don'ts)" : "")));
       const row = h("div", "pz-next-row");
       const next = h("button", "pz-next", "Next problem →");
       next.type = "button";

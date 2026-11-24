@@ -7,6 +7,7 @@ import {
   openingBidFor, openerAfter1NT, losers, openerAfterRaise, responderSecondBid, openerAfterTransferCont,
   respondTakeout, vs1NT, overOvercall, respond2C, respond2NT, respondPreempt, suitLead,
   weakTwoReply, afterIntervention, signalCard, doubledScore,
+  twoSuitOpening, openerRebid,
 } from "../bridge-puzzle.js";
 
 let fails = 0, passes = 0;
@@ -200,6 +201,31 @@ eq("94 with trumps → 9", signalCard([9, 4], true)?.r, 9);
 eq("3 down doubled NV = 500", doubledScore("down", 3, false), 500);
 eq("4 down doubled vul = 1100", doubledScore("down", 4, true), 1100);
 eq("2 overtricks doubled vul = 400", doubledScore("over", 2, true), 400);
+
+// ---- Robson's tips: 2♣ (balanced or unbalanced) and 3♣ (equal-length suits) --
+// Tip 2♣'s exercise hands (i)–(iv) and its 1♣–1♥–1NT deal.
+eq("2♣ (i) KJ62 97 Q42 AK52 balanced", H("KJ62 97 Q42 AK52").bal, true);
+eq("2♣ (i) opens 1NT", op("KJ62 97 Q42 AK52"), "1N");
+eq("2♣ (ii) A3 A9762 A74 K108 balanced", H("A3 A9762 A74 K108").bal, true);
+eq("2♣ (ii) opens 1H", op("A3 A9762 A74 K108"), "1H");
+eq("2♣ (ii) 1H-1S → 1NT", openerRebid(H("A3 A9762 A74 K108"), Hh, "1S")?.answer, "1N");
+eq("2♣ (iii) J2 KJ843 K972 AK unbalanced", H("J2 KJ843 K972 AK").bal, false);
+eq("2♣ (iii) 1H-1S → 2D", openerRebid(H("J2 KJ843 K972 AK"), Hh, "1S")?.answer, "2D");
+eq("2♣ (iv) Q3 86 AQJ AQ5432 opens 1C", op("Q3 86 AQJ AQ5432"), "1C");
+eq("2♣ (iv) 1C-1H → 2C", openerRebid(H("Q3 86 AQJ AQ5432"), C, "1H")?.answer, "2C");
+eq("2♣ deal: K108 J72 K4 AKJ97, 1C-1H → 1NT", openerRebid(H("K108 J72 K4 AKJ97"), C, "1H")?.answer, "1N");
+// Tip 3♣'s exercise hands (i)–(iv) and its 1♠–1NT–2♥ deal.
+eq("3♣ (i) 32 J984 AQ2 AKJ2 → 1H", twoSuitOpening(H("32 J984 AQ2 AKJ2"))?.answer, "1H");
+eq("3♣ (ii) KQ32 Q62 94 AQJ2 → 1NT (trap)", twoSuitOpening(H("KQ32 Q62 94 AQJ2"))?.answer, "1N");
+eq("3♣ (iii) A982 QJ43 KQ2 K9 → 1H", twoSuitOpening(H("A982 QJ43 KQ2 K9"))?.answer, "1H");
+eq("3♣ (iv) KJ973 AK874 42 7 → 1S", twoSuitOpening(H("KJ973 AK874 42 7"))?.answer, "1S");
+eq("3♣ deal: KJ983 AK532 8 J7, 1S-1NT → 2H", openerRebid(H("KJ983 AK532 8 J7"), S, "1N")?.answer, "2H");
+eq("3♣ text: 15 with 4-4 majors, 1H-2C → 2NT", openerRebid(H("AQ52 KJ63 K4 Q52"), Hh, "2C")?.answer, "2N");
+eq("15 four clubs four spades → 1S", twoSuitOpening(H("AQ52 K63 K4 QJ52"))?.answer, "1S");
+// Left alone because the tips don't settle them.
+eq("reverse (1C-1S, four diamonds... five clubs four hearts) rejected", openerRebid(H("K2 AJ43 72 AQ843"), C, "1S"), null);
+eq("four-card support for partner rejected", openerRebid(H("KJ62 A9762 A7 K8"), Hh, "1S"), null);
+eq("balanced 17 rejected", openerRebid(H("A3 A9762 AK4 K108"), Hh, "1S"), null);
 
 // ---- Part 2: bulk generation ------------------------------------------------
 const N = Number(process.env.N || 20000);
