@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="Bridge" />
   <meta name="theme-color" content="#0E2338" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#F3EFE6" media="(prefers-color-scheme: light)" />
-  <script src="theme.js?v=20261121j"></script>
+  <script src="theme.js?v=20261127a"></script>
   <!-- Inside the hub's window the page switch would be a second copy of the
        hub's own, so hide it there (see switch.css). -->
   <script>if (window.self !== window.top) document.documentElement.classList.add("framed");</script>
@@ -21,8 +21,8 @@
        400/600 only, and display=swap so text paints in the fallback stack
        immediately rather than blocking on the webfont. -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&amp;family=IBM+Plex+Mono:wght@400;600&amp;family=Spectral:wght@400;600&amp;display=swap" />
-  <link rel="stylesheet" href="styles.css?v=20261121j" />
-  <link rel="stylesheet" href="switch.css?v=20261121j" />
+  <link rel="stylesheet" href="styles.css?v=20261127a" />
+  <link rel="stylesheet" href="switch.css?v=20261127a" />
   <link rel="preconnect" href="https://sheets.googleapis.com" />
   <!-- Chart.js (line charts) from CDN. No other heavy dependencies. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
@@ -37,7 +37,7 @@
   <!-- Cartoon banner (art/, generated for this site). Hidden inside the hub's
        Bridge window, like the switch above. -->
   <div class="page-banner">
-    <img src="art/banner-1536.webp?v=20261121j" srcset="art/banner-768.webp?v=20261121j 768w, art/banner-1536.webp?v=20261121j 1536w"
+    <img src="art/banner-1536.webp?v=20261127a" srcset="art/banner-768.webp?v=20261127a 768w, art/banner-1536.webp?v=20261127a 1536w"
          sizes="(max-width: 1072px) 100vw, 1040px" width="1536" height="512"
          alt="Painting of the four of us playing bridge on laptops at the dining table, smiling, with an owl in a bow tie on the lamp">
   </div>
@@ -418,7 +418,7 @@
        IMPORTANT: bump the SAME value on the "./data.js?v=" and "./config.js?v="
        import specifiers inside app.js / race.js / data.js as well — those are
        separate fetches, and a stale data.js is where most of the logic lives. -->
-  <script src="tabs.js?v=20261121j" defer></script>
-  <script type="module" src="app.js?v=20261121j"></script>
+  <script src="tabs.js?v=20261127a" defer></script>
+  <script type="module" src="app.js?v=20261127a"></script>
 </body>
 </html>
