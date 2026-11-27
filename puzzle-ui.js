@@ -9,7 +9,7 @@
 
 import {
   makeProblem, legalBids, bidText, parseCard, cardId, rankStr, SYM, SEAT_NAME,
-} from "./bridge-puzzle.js?v=20261124a";
+} from "./bridge-puzzle.js?v=20261127a";
 
 const STORE = "bridgePuzzleStreak";
 const RED = new Set([1, 2]); // diamonds, hearts
@@ -176,6 +176,7 @@ function answerText(p, a) {
 // ---- The window ----------------------------------------------------------------
 export function initPuzzle(host, meta) {
   if (!host) return;
+  initPopOut(host);
   const fromUrl = Number(new URLSearchParams(location.search).get("p"));
   show(Number.isInteger(fromUrl) && fromUrl > 0 ? fromUrl : newSeed());
 
@@ -275,4 +276,70 @@ export function initPuzzle(host, meta) {
       next.focus({ preventScroll: true });
     }
   }
+}
+
+// ---- Pop-out -----------------------------------------------------------------
+// Click anywhere in the Bridge problem window and it lifts out of the page and
+// grows, with the rest of the hub dimmed behind it. That first click only opens
+// it: it never counts as an answer. Close with the button, Esc, or a click on
+// the dimmed page. A same-sized placeholder keeps the hub from reshuffling.
+function initPopOut(host) {
+  const win = host.closest(".win-puzzle");
+  const head = win && win.querySelector(".win-head");
+  if (!win || !head) return;
+
+  const toggle = h("button", "pz-pop-toggle");
+  toggle.type = "button";
+  head.appendChild(toggle);
+
+  const backdrop = h("div", "pz-backdrop");
+  const holder = h("div", "pz-placeholder");
+  holder.setAttribute("aria-hidden", "true");
+  let open = false;
+
+  function paint() {
+    toggle.textContent = open ? "✕ Close" : "⤢ Bigger";
+    toggle.setAttribute("aria-label", open ? "Close the large bridge problem" : "Show the bridge problem larger");
+    toggle.setAttribute("aria-expanded", String(open));
+  }
+
+  function setOpen(next) {
+    if (next === open) return;
+    open = next;
+    if (open) {
+      holder.style.height = `${win.offsetHeight}px`;
+      win.after(holder);
+      document.body.appendChild(backdrop);
+      win.classList.add("is-popped");
+      win.setAttribute("role", "dialog");
+      win.setAttribute("aria-modal", "true");
+      document.documentElement.classList.add("pz-noscroll");
+      win.scrollTop = 0;
+    } else {
+      win.classList.remove("is-popped");
+      win.removeAttribute("role");
+      win.removeAttribute("aria-modal");
+      document.documentElement.classList.remove("pz-noscroll");
+      backdrop.remove();
+      holder.remove();
+    }
+    paint();
+  }
+
+  // Capture phase, so the opening click is swallowed before a bid or card sees it.
+  win.addEventListener("click", (e) => {
+    if (e.target.closest(".pz-pop-toggle")) {
+      e.stopPropagation();
+      setOpen(!open);
+      return;
+    }
+    if (!open) {
+      e.stopPropagation();
+      e.preventDefault();
+      setOpen(true);
+    }
+  }, true);
+  backdrop.addEventListener("click", () => setOpen(false));
+  document.addEventListener("keydown", (e) => { if (open && e.key === "Escape") { setOpen(false); toggle.focus(); } });
+  paint();
 }
